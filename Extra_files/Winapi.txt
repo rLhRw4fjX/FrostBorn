@@ -1,0 +1,14 @@
+ external (INT,  "CreateWindow",    "CreateWindowExA",   "User32.dll"  );
+external  (INT,  "EnableWindow",    "EnableWindow",      "User32.dll"  );
+ external (INT,  "ShowWindow",      "ShowWindow",        "User32.dll"  );
+external  (INT,  "CreateFont",      "CreateFontA",       "Gdi32.dll"   );
+ external (INT,  "GetWindowLong",   "GetWindowLongA",    "User32.dll"  );
+external  (INT,  "SetWindowLong",   "SetWindowLongA",    "User32.dll"  );
+ external (INT,  "RegisterHotKey",  "RegisterHotKey",    "User32.dll"  );
+external  (INT,  "IsUserAnAdmin",   "IsUserAnAdmin",     "Shell32.dll" );
+ external (INT,  "abs",             "abs",               "msvcrt.dll"  );
+external  (INT,  "MoveMemory",      "RtlMoveMemory",     "Ntdll.dll"   );
+ external (INT,  "GetUserName",     "GetUserNameA",      "Advapi32.dll");
+external  (INT,  "GetWindowThreadProcessId", "GetWindowThreadProcessId", "User32.dll");
+ external (INT,  "TerminateProcess",         "TerminateProcess",         "Kernel32.dll");
+external  (INT,  "MessageBox",      "MessageBoxA",       "User32.dll"  );

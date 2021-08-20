@@ -1,0 +1,2433 @@
+function warrior(){
+
+if(f_recall_warrior == 0){
+
+   log_t("Common warrior call");
+
+if(f_equip == 0){           // нужно ли делать проверку снаряжения
+
+   log_t("Equip check. Location: " + t_combo_farm[0][f_combo_farm[0]]);
+
+   int tools[5], ear_check = 0; // кирка, топор, посох, мешок (т1), копье
+
+   initialarray(#tools[0], 0);
+
+   panel("open", 0, 464, 339, 475, 349); // открыть инвентарь
+
+for(int i = 0, n = -1, s = 1; i <= 4; i++){
+
+    n++;                                    // прибавлялась всегда, но до пропуска всех операций
+
+if(f_combo_farm[0] == 0 && i < 4)continue;  // если локация лес - пропустить поиск кирки и топора
+
+ if(i == 3 || i == 2){ // мешок или копье
+
+  if(findimage_(#Image_w[i][0][0], 100, 276, 68, 402, 246, 35, 70) == 0){ // не одет
+
+     log_("Object w"+format(i)+" is not dressed");
+
+   if(findimage_(#Image_w[i][0][0], 100, 32, 56, 279, 296, 35, 70) == 1){ // но обнаружен в инвентаре
+
+      log_t("Object w"+format(i)+" found in inventory. Dress it up");
+
+      mouse_(x+32, y+56, x+32+imagewidth(#Image_w[i][0][0]), y+56+imageheight(#Image_w[i][0][0]));
+
+      pause_(300, 600);
+
+      mouse_(50, 319, 124, 336);  // еквип
+}
+else {
+
+log_t("Object w"+format(i)+" was not found in inventory. Check the chest");
+
+tools[n] = i; // иначе записать
+  }
+ }
+}
+else{
+
+ if(findimage_(#Image_w[i][0][0], 100, 32, 56, 279, 296, 35, 70) == 0){ // в инвентаре нету кирки, топора или посоха
+
+    tools[n] = i; // записать
+
+    log_t("Object w"+format(i)+" was not found in inventory. Check the chest");
+
+if(ear_check == 0 && findimage(s, #Image_q[9][0][0], -1, #x_ar[0], #y_ar[0], 32, 56, 279, 296, 15, 15, 15, 15, 15, 15, 95, 1, main_w[0]) == 0){
+
+    ear_check = 1; // проверить слоты под предметы для раннего складывания ресурсов
+}
+
+s++;
+
+  }
+ }
+}
+
+pause_(600, 800);
+
+panel("close");
+
+pause_(300, 600);
+
+if(index_ofi(sizearray(tools), #tools[0]) > 0){ // есть ли в массиве номера картинок для эквипа
+
+ if(ear_check == 1){                            // инвентарь забит, нужно освободить
+
+    log_t("Inventory not enough space for equipment. Need to put resources in chests");
+
+    f_fold_res = 1;                             // принудительно поменять флаг складывания ресурсов т.к инвентарь забит
+
+/*
+
+сложить ресурсы на територии менеджера и обновить локацию
+
+find_start_title (wariror)
+
+find_start_title (manager)
+
+res_managment("warrior", "recyclable");
+
+ul_pos(0, "-1", "zigzag", "-1");
+
+*/
+
+find_start_title("manager");
+
+res_managment("warrior", "unrecyclable");
+
+ul_pos(0, "-1", "zigzag", "-1");  // обновить локацию что бы оказаться вместе с сундуком со снарягой
+
+f_fold_res = 0; ear_check = 0;
+
+pause_(300, 600);
+
+log_t("Resources are stacked");
+}
+
+panel("open", 3, 537, 309, 566, 342); // открыть сундук
+
+for(int k = 0; k < sizearray(tools); k++){
+
+ if(tools[k] != 0){ // предмет не 0
+
+  if(findimage_(#Image_w[tools[k]][0][0], 100, 325, 42, 575, 286, 35, 70) == 1){                // найден отсутствующий предмет в сундуке
+
+     log_t("Item w"+format(tools[k])+" found in chest");
+
+   if(tools[k] == 5 || tools[k] == 6){                                                          // копье или мешок
+
+     log_t("Put on");
+
+     mouse_(x+325, y+42, x+325+imagewidth(#Image_w[l][0][0]), y+42+imageheight(#Image_w[l][0][0])); // выбрать
+
+     pause_(300, 600);
+
+     mouse_(50, 319, 124, 336); // еквип
+}
+else{                           // положить в инвентарь
+
+log_t("Put in inventory");
+
+sendmousedbl(LEFT, x+330+rand(-5,5), y+47+rand(-5,5), main_w[0]); // клик по предмету со смещениями
+
+pause_(300, 600);
+ }
+}
+else{
+
+log_t("Item w"+format(tools[k])+" is missing from the crate");
+
+reset_bot();
+  }
+ }
+}
+
+panel("close");
+}
+
+f_equip = 1; // Все снаряжени есть в инвентаре
+}
+else{
+
+log_t("We do not need to check the equipment");
+}
+
+if(f_fold_res == 1){ // нужно сложить ресурсы
+
+   log_t("Need to put resources in chests");
+
+/*
+
+find_start_title (wariror) // переход примерно на стратовую точку менеджера
+
+find_start_title (manager) // двигаемся змейкой пока не найдем серые пикслеи пути
+
+res_managment("warrior", "recyclable");  // сложить ресурсы на локации манагера c типом добычи
+
+ul_pos(0, "-1", "zigzag", "-1");    // перезайти в локацию
+
+*/
+
+find_start_title("manager");               // зайти на свою локацию для складывания остального типа ресурсов
+
+res_managment("warrior", "unrecyclable");  // вызов с f_fold_res = 0 и параметром warrior выдаст ошибку
+
+f_fold_res = 0;                            // Глобальной сделана что бы в той же функции понимать складывать при воине, при менеджере складывать или чекать станки
+}
+
+if(f_combo_farm[0] == 0)ul_pos(1, "forest", "zigzag", "-1"); // поменять локацию на лес
+
+else{
+
+messagebox_("Location selection error");
+}
+
+pause_(500, 800);
+
+if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 98, 28, 101, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+   heal_up("nohome", 100, "staff_check", "null");
+}
+else{
+
+ if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 133, 27, 136, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+    heal_up("nohome", 50, "staff_check", "null");
+ }
+}
+
+traf_side = esc_route(#c_exitl[0], #1_px[0], #xy_circl[0][0], 35, "random"); // определить сторону зеленых пикселей
+ 
+traf_side = invers(traf_side);                                               // сменить направление от них
+
+if(f_spear_inv_av == 0){
+
+   craft_item("spear");
+
+   f_spear_inv_av = 1;
+}
+
+enabletimer(4);                                                          // никогда при спавне нас на карте не должно быть моба
+
+loc_farm_nt = rand(3, 5); // залутать 3-5 локаций и домой
+
+log_t("Location loot need: "+format(loc_farm_nt));
+
+move(1, traf_side);
+}
+
+f_recall_warrior = 0;     // флаг перевызова == 1 когда мы перевызываем воина с таймера
+
+for(loc_farm_l; loc_farm_l <= loc_farm_nt; loc_farm_l++){ // пока не залутали от 3 до 5 локаций
+
+ while(em_chest < 2){                                     // пока не залутали 2 сундука на локации
+
+ if(findheapcolor(1, #c_lchest[0], #sc_lchest[0], 3, 2, #xg[1], #yg[1], 4, 4, 7, 6, 556, 31, 618, 95, 9, 10, 9, 10, 9, 10, main_w[0]) == 1){
+
+    res_c = 0;                        // если некоторое время не находили сундук - сбросить координаты пред. сундука
+
+    tmp_i[0] = abs(xg[0] - xg[1]);    // как нашли сундук посчитать смещение
+
+    tmp_i[1] = abs(yg[0] - yg[1]);
+/*
+
+> 10 px - сундук на др. расстоянии. может обнаружить другой сундук, но он не войдет в разницу
+10 px, его координаты обновятся как будто это тот сундукт от которого отходим и в итоге мы подойдем
+к одному и тому же сундуку
+
+*/
+
+if(tmp_i[0] > 10 || tmp_i[1] > 10){
+
+   log_t("Found a chest long_r");
+
+   move(0, traf_side);
+
+   pause_(400, 600);
+
+   get_chest_line(xg[1]+556, yg[1]+31, #tmp_i[0]);          // посчитать куда надо пойти что бы сундук залутать
+
+if(get_chest_res(tmp_i[0], tmp_i[1], f_mch, 9, 10, 8000) == 1){ // посетили сундук, мб один и тот же
+
+   log_t("ret 1");
+
+   f_ucord = 1;                                                 // После подхода к сундуку и лута, обновить его координату на координаты персонажа
+
+   pause_(400, 600);
+
+if(em_chest > 1){ // попытка сменить направление к концу локации под конец лутинга сундуков
+
+   log_t("Trying to change direction towards the end of the location");
+
+   traf_side = esc_route(#c_exitl[0], #1_px[0], #gpit[0][0], 35, "random");
+}
+
+move(1, traf_side);
+
+/*
+
+Может посетить один и тот же сундук, т.к бот не проверяет расстояние между сундуками
+в сканировании дальнего радиуса подхода. Пока что костыль на проверку одного и того же сундука
+
+*/
+
+disabletimer(4);                  // отключаем поиск мобов при поиске близких сундуков, т.к можем сбиться
+
+log_t("Search for chests in a close radius");
+
+looptime(400){                    // поискать сундуки близкие друг к другу 6 px сундук 10 разница
+
+ if(findheapcolor(1, #c_lchest[0], #sc_lchest[0], 3, 2, #x, #y, 4, 4, 7, 6, 571, 48, 603, 80, 9, 10, 9, 10, 9, 10, main_w[0]) == 1){
+
+    tmp_i[0] = abs(15 - x);       // в данном случае ближайший к нам сундук не будет найден т.к он близко
+
+    tmp_i[1] = abs(15 - y);       // к персонажу и при подходе персонаж не много его перекрывает
+
+if(tmp_i[0] > 7 || tmp_i[1] > 7){ // меняешь координаты поиска, меняй и эти параметры
+
+   log_t("Found a chest close_r");
+
+   move(0, traf_side);
+
+   pause_(400, 600);
+
+   get_chest_line(x+571, y+48, #tmp_i[0]);       // посчитать куда идти к новому сундуку
+
+   get_chest_res(tmp_i[0], tmp_i[1], 1, 5, 4, 3000); // выполнить динамическую доводку до сундука предварительно отойдя от него со статичной доводкой
+
+   pause_(400, 600);
+
+   traf_side = esc_route(#c_exitl[0], #1_px[0], #gpit[0][0], 35, "random"); // задать новое направление
+
+   move(1, traf_side);
+
+   break;
+ }
+}
+
+pause(1);
+}
+
+if(em_chest > 1){
+
+   log_t("Chests open > 1. Exit the search_1");
+
+   break; 
+ }
+}
+else{
+
+log_t("ret 0");
+
+initialarray(#xg[0], 0); initialarray(#yg[0], 0);
+
+if(em_chest > 1){
+
+   log_t("Chests open > 1. Exit the search_2");
+
+   break; 
+}
+
+traf_side = invers(esc_route(#c_exitl[0], #1_px[0], #xy_circl[0][0], 35, "random")); // движение от зеленых пикселей
+
+move(1, traf_side);
+ }                         // как залутали 2 пачки сундуков, прерываем поиск
+}
+
+if(f_ucord == 1){          // подходили ранее к сундуку, координаты сундука стали равны координатам персонажа
+
+   xg[0] = 32; yg[0] = 32; // так же используются как temp координаты в looptime(700) поиска близлежащих сундуков
+
+   xg[1] = 32; yg[1] = 32;
+
+   f_ucord = 0; f_mch = 1;
+}
+else{                      // обновить координаты сундука, если он не попадает под расстояние
+
+ if(em_chest > 0){
+
+/*
+
+Если первый найденный сундук будет пустым, то мы бесконечно будем отходить и 
+подходить к сундуку, т.к должен быть залутан хотя бы 1 сундук для обновления
+
+*/
+
+xg[0] = xg[1];
+
+yg[0] = yg[1];
+
+f_mch = check_rad_point(xg[1], yg[1]);
+ }
+}
+
+enabletimer(4);
+}
+
+if(findheapcolor(1, #c_exitl[0], #1_px[0], 1, 1, #x, #y, 2, 2, 3, 3, gpit[traf_side][0], gpit[traf_side][1], gpit[traf_side][2], gpit[traf_side][3], 35, 35, 35, 35, 35, 35, main_w[0]) == 1){
+
+   log_t("We reached the edge of the location");
+
+   pause_(500, 700);   // добежали до края
+
+   move(0, traf_side); 
+
+   pause_(400, 600);
+
+   traf_side = invers(traf_side);  // сменить направление движения на обратное
+
+   tmp_i[0] = 0;
+
+for(int a = 0, d = 0; a < 4; a++){ // записать все доступные направления движения
+
+ if(findheapcolor(1, #c_exitl[0], #1_px[0], 1, 1, #x, #y, 2, 2, 3, 3, gpit[a][0], gpit[a][1], gpit[a][2], gpit[a][3], 35, 35, 35, 35, 35, 35, main_w[0]) == 0 && a != traf_side){
+
+   av_route[d] = a;
+
+   d++;
+
+   tmp_i[0] = d;        // узнать сколько всего было записано направлений
+ }
+}
+
+log_t("Available driving directions: "+format(tmp_i[0]));
+
+/*  
+
+ При возникновении ситуации (2 свободных направления) - 1 раз выберется 1 доступное, 2 раз 2 доступное, иначе будем бегать по кругу
+ т.к мы не всегда бегаем четко по границе карты, где конечной точкой бота был бы доступ только к 1 направлению движения
+ 
+ */
+
+if(tmp_i[0] > 1){              // 2нп
+
+ if(av_route[3] == 0){         // не было ситуации с 2 нп
+
+    av_route[3] = av_route[0]; // выбрать первое нп
+
+    traf_side = av_route[0];   // запомнить
+}
+else{                          // была
+
+traf_side = av_route[1];       // выбрать второе нп и обнулить память
+
+av_route[3] = 0;
+
+sit_c = 0;
+ }
+}
+else{ // 1 нп
+
+sit_c++;
+
+traf_side = av_route[0];
+
+ if(sit_c == 3){ // 2 нп 1 нп 1 нп 1 нп 2 нп ([направление]не будет сброса av_route[3] и мы будем ориентироваться по ситуации 1x2 нп назад)
+
+    sit_c = 0;
+
+    av_route[3] = 0;
+ }
+}
+
+turn_c++; // считаем сколько направления сменили
+
+log_t("Changed directions: "+format(turn_c));
+
+if(turn_c != 6)move(1, traf_side); 
+}
+
+if(turn_c == 6){     // Вынос turn_c за пределы определения границ карты оправдан перевызовом при драке с мобами
+
+log_t("Changed 6 directions");
+
+move(1, traf_side);  // двигаемся 6-7 секунд вглубь. Но прекращаем движения если сбились и нашли зеленые пиксели
+
+findheapcolor_(#c_exitl[0], #1_px[0], 1, rand(6000, 7000), 2, 2, 3, 3, gpit[traf_side][0], gpit[traf_side][1], gpit[traf_side][2], gpit[traf_side][3], 35);
+
+move(0, traf_side);
+
+pause_(400, 600);
+
+traf_side = esc_route(#c_exitl[0], #1_px[0], #gpit[0][0], 35, "random"); // найти зеленые пиксели в дальнем радиусе
+
+traf_side = invers(traf_side);                                           // сменить направление от них
+
+move(1, traf_side);
+
+turn_c = 0;
+}
+
+if(res_c == 120){ // счетчик сброса координат предыдущего сундука
+
+   log_t("Reset the coordinates of the previous chest");
+
+   xg[0] = 0; xg[1] = 0; 
+
+   yg[0] = 0; yg[1] = 0;
+
+/*
+
+ 2 сундук находится на границе зоны поиска с 1, но мы его не нашли и несколько раз сменили направление движения от
+ зеленых пикселей. В итоге как мы вошли в зону распознавания второго сундука, он не попадет под разницу, т.к 1
+ сундук находился примерно на этой же границе распознавания при отходе
+
+*/
+}
+
+res_c++;
+}
+
+disabletimer(4);
+
+f_ucord = 0;  sit_c  = 0; res_c = 0;  // обнулить переменные как залутали локацию
+em_chest = 0; f_mch = 0;  turn_c = 0;
+
+initialarray(#xg[0], 0); initialarray(#yg[0], 0); initialarray(#av_route[0], 0);
+
+if(loc_farm_l != loc_farm_nt){         // нету do while в кибор
+
+   log_t("We continue to visit locations to open chests");
+
+   ul_pos(0, "-1", "straight", "mva_chest");  // обновить локацию если не залутали нужное их число
+
+   pause_(600, 900);
+
+// похилится в зависимости от недостающего хп на 100 или 50
+
+if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 98, 28, 101, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+   heal_up("nohome", 100, "staff_check", "null");
+}
+else{
+
+ if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 133, 27, 136, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+    heal_up("nohome", 50, "staff_check", "null");
+ }
+}
+
+traf_side = esc_route(#c_exitl[0], #1_px[0], #xy_circl[0][0], 35, "random"); // определить сторону зеленых пикселей
+ 
+traf_side = invers(traf_side);                                               // сменить направление от них
+
+if(f_spear_inv_av == 0){
+
+   craft_item("spear");
+
+   f_spear_inv_av = 1;
+}
+
+enabletimer(4);
+
+move(1, traf_side);
+}
+else{
+
+log_t("Going home");
+
+killed_mob = 0; loc_farm_l = 0; f_fold_res = 1; // остальные обнуляются выше и так
+
+ul_pos(1, "home", "straight", "mva_chest");
+
+if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 155, 28, 162, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+   heal_up("home", 50, "staff_check", "null");
+}
+
+break;
+  }
+ }
+}
+
+function res_managment(string unit_type, string res_type){
+
+//  направление зажатого типа кнопки , блокировка движения назад , искомый тип плитки , пред. тип плитки , находили путь, а значит зажимали кнопку
+int button_st = -1                   , travel = -2               , sc_title = -1      , back_tittle = -1 , way_av = 0;
+
+//  все сложили у воина, застревания   , временная переменная, сменилось клеток до пустого сундука (1 - всегда игнорируем)
+int fold_return = 0    , back_scan = 0 , temp = 0            , changed_title = 0;
+
+log_t("Resource actions");
+
+loop(){
+
+for(int q = 0; q < 4; q++){ // сканирование 4х направлений движения
+
+ if(travel != q){           // мы смотрим одновременно только 3 направления
+
+// пока есть куда двигаться
+
+log_t("Movement towards "+format(travel));
+
+while(findheapcolor(1, #c_mgray[0], #sc_mgray[0], 1, 1, #x, #y, 2, 2, 3, 3, xy_circl[q][0], xy_circl[q][1], xy_circl[q][2], xy_circl[q][3], 8, 8, 8, 8, 8, 8, main_w[0]) == 1){
+
+ if(sc_title != 1){
+
+  if(findheapcolor(1, #c_seno[0], #1_1_px[0], 2, 2, #x, #y, 2, 3, 3, 4, 320, 188, 327, 194, 8, 8, 8, 8, 8, 8, main_w[0]) == 1){ // сено
+
+    sc_title = 1;
+
+    log_t("Hay found");
+
+  if(changed_title != change_title){
+
+     changed_title++;
+
+     log_t("Сhanged cells: "+format(changed_title));
+  }
+ }
+}
+
+if(sc_title != 2){
+
+ if(findheapcolor(1, #c_wood[0], #sc_wood[0], 2, 2, #x, #y, 2, 3, 3, 4, 320, 188, 327, 194, 8, 8, 8, 8, 8, 8, main_w[0]) == 1){ // дерево
+
+    sc_title = 2;
+
+    log_t("Stone tiles found");
+
+ if(changed_title != change_title){ // пока не сменится нужное число клеток, считать сколько сменилось
+
+    changed_title++;
+
+    log_t("Сhanged cells: "+format(changed_title));
+  }
+ }
+}
+
+if(button_st != q){                   // клавиша движения уже была нажата, сканим только путь
+
+   log_t("Movement key was pressed");
+
+   way_av = 1;                        // было нажатие кнопки со сканом пути
+
+   button_st = q; move(1, button_st); // запомнить клавишу и нажать её
+
+   back_scan = 0;                     // сбросить счетчик обратного пути
+
+   travel = invers(q);                // определить какое направление является "Вперед" что бы не двигаться "назад"
+}
+
+if(sc_title != back_tittle){          // сменилась клетка
+
+   back_tittle = sc_title;
+
+if(changed_title == change_title){ // дошли до нужной клетки (преодолели n клеток)
+
+   log_t("Overcome the required number of cells");
+                                         
+if(f_fold_res == 1){              // есть что складывать
+
+ if(findimage_(#Image_q[2][0][0], 1, 516, 287, 581, 352, 30, 95) == 1){ // обнаружен значек руки
+
+    log_t("Can go into the chest");
+
+if(way_av != 0){ // хз зачем сделано, путь будет
+
+   log_t("Stop_1");
+
+   move(0, button_st);  
+
+   button_st = -1;
+
+   way_av = 0;
+}
+
+pause_(1100, 1600);
+
+panel("open", 3, 537, 309, 566, 342); // открыть сундук с любой стороны на новом тайтле
+
+if(move_res(-1, unit_type, res_type, -1) > 0)return;
+
+pause_(1100, 1600);
+
+temp = side_of_chest();              // определить сторону с которой открыли сундук
+
+if(travel == 1 || travel == 2){      // открыть с противоположной стороны в зависимости от пути
+
+ if(temp == 2 && move_res(0, unit_type, res_type, 3) > 0)return;
+
+ else{
+
+ if(temp == 1 && move_res(3, unit_type, res_type, 0) > 0)return;
+
+ }
+}
+else{
+
+ if(travel == 0 || travel == 3){
+
+ if(temp == 2 && move_res(1, unit_type, res_type, 2) > 0)return;
+
+ else{
+
+ if(temp == 1 && move_res(2, unit_type, res_type, 1) > 0)return;
+
+  }
+ }
+}
+
+ }
+}
+else{
+
+if(unit_type == "manager"){ // воин сразу заходит на теру манагера и включает поиск пути
+
+   messagebox_("Чекай станки!");
+}
+else{
+
+messagebox_("Функция поика пути не может вызываться воином, если нечего складывать");
+
+return 0;
+   }
+  }
+ }
+}
+
+pause(1);
+}
+
+if(way_av != 0){     // был найден путь ранее и не произошел сброс пути
+
+   log_t("The path in the direction of "+format(button_st)+" ended");
+
+   way_av = 0;
+
+   move(0, button_st);
+
+   button_st = -1;
+
+   pause_(600, 900); // после того как нашли ограничители пути, отпустить зажатую клавишу
+ }
+}
+
+pause(1);
+}
+
+if(back_scan > 0){
+
+   log_t("Impasse. Unlock reverse direction");
+
+   travel = -1;        // разблокировать путь назад если 3 направления недоступны
+
+if(back_scan == 2){ // полная блокировка пути
+
+   log_t("No driving directions found");
+
+   button_st = -1;  travel = -2;   sc_title = -1; back_tittle = -1;  way_av = 0; // сбросить значения
+
+   fold_return = 0; back_scan = 0; changed_title = 0; temp = 0;
+
+   ul_pos(0, "-1", "zigzag", "-1"); // перезайти в локацию
+
+   pause_(600, 900);
+
+   find_start_title("manager");
+ }
+}
+
+back_scan++;
+ }
+}
+
+function get_chest_res(int qx, int qy, int go_away, int px_away, int trend, int search_time){ // доводка и открытие сундука
+
+log_t("Trying to take resources from a found chest");
+
+int tmp[4], up = 0, down = 0;
+
+initialarray(#tmp[0], 0);
+
+sendmouse_mv("down", qx, qy); // зажать пкм для подхода
+
+if(go_away == 1){       // нужно отойти от сундука
+
+   log_t("Need to move away from the chest");
+
+   disabletimer(4);
+
+for(int i = 0; i < 250; i++){ // 250 мс отхода + доп.
+
+ if(findheapcolor(1, #c_lchest[0], #sc_lchest[0], 3, 2, #x, #y, 4, 4, 7, 6, 574, 51, 598, 75, 9, 10, 9, 10, 9, 10, main_w[0]) == 1){ // нашли сундук
+
+    tmp[0] = abs(12 - x);     // рассчитать как далеко отошли от сундука
+
+    tmp[1] = abs(12 - y);
+
+for(int l = 0; l < 2; l++){   // посчитать, сколько раз сменилось расстояние до сундука в - или +
+
+ if(tmp[l] - tmp[l+2] > 0)up++;
+
+ else{
+
+  if(tmp[l] - tmp[l+2] < 0)down++;
+ }
+}
+
+// отошли от пред. сундука далеко (1 из 2х сундуков сработает по выходу) или по многу раз сменилось расстояние до сундука
+
+if(up > trend || down > trend || tmp[0] > px_away || tmp[1] > px_away){
+
+   pause_(570, 670); // статично довести до сундука
+
+   break;
+}
+else i = 0; 
+
+tmp[2] = tmp[0];
+
+tmp[3] = tmp[1];
+}
+
+pause(1);
+ }
+}
+
+/*
+
+Можем выйти слишком поздно по трендам или px_away, и у нас не будет найден сундук что бы выполнить доводку. В итоге бот пробежит
+дальше сундука пытаясь доводить по обнаруженным координатам или заданным ранее. Сундук не засчитается, будет выполнено движение далее и 
+скорее всего мы тригернемся на ближайший сундук
+
+*/
+
+log_t("Tracking the chest");
+
+looptime(search_time){ // ищем сундук вокруг версонажа
+
+ if(findheapcolor(1, #c_lchest[0], #sc_lchest[0], 3, 2, #x, #y, 4, 4, 7, 6, 579, 56, 595, 72, 9, 10, 9, 10, 9, 10, main_w[0]) == 1){
+
+    disabletimer(4);
+
+if(go_away == 1){
+
+   tmp[0] = abs(7 - x); // расчет статичной доводки в зависимости от расстояния при близком отходе от сундука
+
+   tmp[1] = abs(7 - y);
+
+   up = 0;
+
+for(int q = 0; q < 2; q++)if(tmp[q] > up)up = tmp[q];
+
+    looptime(up * 70)pause(1);
+}
+else pause_(370, 470);    // иначе статичная доводка
+
+sendmouse_mv("up");       // нашли сундук, отпустить клавишу, (отпускаем по запомненным координатам с зажатия)
+
+log_t("Found a chest next to me");
+
+pause_(400, 600);
+
+tmp[0] = qx; tmp[1] = qy;        // для доводки по старым
+
+for(int ft = 1; ft <= 5; ft++){  // динамическая доводка по координатам
+
+ if(findimage_(#Image_q[2][0][0], 100, 516, 287, 581, 352, 30, 95) == 0){ // ждем руку и пытаемся обновить кординаты ближ. сундука 
+
+    log_t("Adjusting the approach: "+format(ft)+"/5");
+
+if(findheapcolor(1, #c_lchest[0], #sc_lchest[0], 3, 2, #x, #y, 4, 4, 7, 6, 579, 56, 595, 72, 9, 10, 9, 10, 9, 10, main_w[0]) == 1){
+
+   get_chest_line(x+579, y+56, #tmp[0]); // если обновили координаты - доводим по новым
+}
+
+sendmouse_mv("down", tmp[0], tmp[1]);
+
+pause_(250, 300); 
+
+sendmouse_mv("up");
+
+pause_(600, 800);
+}
+else{                           // вероятно подошли к сундуку
+
+log_t("Waiting for opponents");
+
+if(spot_enemy(800, 1100) == 1){ // подождать мобов около сундука
+
+   mob_action("fight", "notimer");
+}
+
+get_cord_hp(#tmp_i[0]); // получить координаты хп с левого угла
+
+enabletimer(1);         // отключится как зайдем в сундук или отойдем слишком далеко от сундука по мобам
+
+if(findimage_(#Image_q[2][0][0], 100, 516, 287, 581, 352, 30, 95) == 1){ // отошли далеко от сундука при драке с мобами и оказались около дерева и т.д
+
+   log_t("Trying to open a chest");
+
+   mouse_(537, 309, 566, 342);
+}
+else{
+
+log_t("Moved far from the chest");
+
+disabletimer(1);
+
+continue;
+}
+
+pause_(400, 600);  // ищем белый замок
+
+disabletimer(3);   // отключить таймер рестартов. Подключится как выйдем из сундука
+
+if(findimage_(#Image_q[12][0][0], 1000, 319, 103, 331, 112, 15, 90) == 1 && findimage_(#Image_q[3][0][0], 8000, 0, 0, 650, 92, 5, 90) == 1){ // нашли белые пиксели и картинку "в сундуке"
+
+   pause_(600, 900);      // кнопка "взять все" пропадает спустя некоторое время если сундук пустой. Проверка снизу по ней
+
+if(findimage_(#Image_q[23][0][0], 100, 481, 308, 571, 345, 5, 95) == 0){ // ложные белые пиксели с верху
+
+   log_t("The chest is empty");
+
+if(em_chest == 0){
+
+   log_t("This was the first chest found");
+
+   em_chest++;
+}
+
+panel("close");
+
+return 1; // был подход к сундуку
+}
+
+for(int k = 0; k < sizearray(it_s); k++){ // вызвать фильтры
+
+thing(it_s[k][0], it_s[k][1], it_i[k][0], it_i[k][1], it_i[k][2], it_i[k][3]);
+}
+
+log_t("Take items if there are any");
+
+if(findimage_(#Image_q[23][0][0], 100, 481, 308, 571, 345, 5, 95) == 1){ // взять всё если есть что брать после фильтров
+
+   mouse_(494, 317, 555, 336); 
+
+   pause_(600, 800);
+
+if(findimage_(#Image_q[1][0][0], 8000, 0, 0, 179, 55, 5, 95) == 0){ // выход автоматом из сундука после взять все
+
+   log_t("Panel close error");
+
+   reset_bot();
+}
+
+pause_(400, 600);
+
+enabletimer(3);
+}
+else{
+
+panel("close"); // самому закрыть панель, если брать нечего
+
+pause_(600, 800);
+}
+
+em_chest++;     // счетчик залутанных сундуков
+
+return 1;
+}
+else{ // могли найти или не найти замочек и попастся на инвентарь моба
+
+if(findimage_(#Image_q[11][0][0], 1300, 0, 0, 650, 92, 5, 90) == 1){ // проверить на инвентарь моба
+
+   log_t("Opened the corpse of a mob");
+
+   pause_(400, 600);
+
+for(int s = 1; s < 6; s++){ // проверить последовательно первые 5 ячеек инвентаря [больше лута в мобе сомневаюсь что будет]
+
+ if(findimage(1, #Image_q[9][0][0], -1, #x, #y, 270+49*s, 43, 328+49*s, 90, 15, 15, 15, 15, 15, 15, 95, 0, main_w[0]) == 0){ // ячейка не пустая
+
+    log_t("Select cell");
+
+    mouse_(285+49*s, 58, 313+49*s, 75); // выбрать ячейку
+
+    pause_(400, 600);
+
+ if(findimage(1, #Image_q[13][0][0], -1, #x, #y, 270+49*s, 43, 328+49*s, 90, 35, 35, 35, 35, 35, 35, 70, 0, main_w[0]) == 1){     // в ячейке мясо
+
+    log_t("Eat");
+
+ while(findimage(1, #Image_q[13][0][0], -1, #x, #y, 270+49*s, 43, 328+49*s, 90, 35, 35, 35, 35, 35, 35, 70, 0, main_w[0]) == 1){ // кушаем пока оно есть
+
+    mouse_(49, 318, 120, 335); // клик применить
+
+    pause_(1400, 1700);
+ }
+
+continue; //скан след. ячейки
+}
+
+pause_(400, 600);
+
+log_t("Delete item");
+
+mouse_(249, 319, 261, 335);   // удалить
+
+if(findimage_(#Image_q[14][0][0], 5000, 152, 98, 499, 233, 5, 95) == 0){
+
+   log_t("Image q14 not found");
+
+   reset_bot();
+}
+
+pause_(400, 600);
+
+mouse_(387, 243, 483, 264);  // подт. удаление
+
+pause_(400, 600);
+}
+else break;                  // очищаем инвентарь моба. Мясо едим остальное удаляем
+
+}
+
+panel("close");               // закрыть инвентарь сундука
+
+pause_(400, 600);
+
+continue;                    // следующая попытка доводки
+}
+
+if(findimage_(#Image_q[3][0][0], 250, 0, 0, 650, 92, 5, 90) == 1){ // посетил один и тот же сундук
+
+   log_t("Visited the empty chest");
+
+/*
+
+если первый посещенный сундук пустой, то посчитать что лут с него
+забрали т.к могут не обновится его кооординаты относительно персонажа
+
+*/
+
+if(em_chest == 0){
+
+   log_t("This was the first chest found");
+
+   em_chest++;
+}
+
+pause_(400, 600);
+
+panel("close");
+
+pause_(400, 600);
+
+return 1;
+}
+
+/*
+
+Нужно подключить таймер вручную, если после доводки мы не заходили в сундук (подобрали кустик например) или зашли в один 
+и тот же сундук (нарвались на рестарт, один и тот же сундук не был найден, таймер 3 не включился т.к не было вызова panel)
+
+*/
+
+enabletimer(3);
+  }
+ }
+}
+
+log_t("Failed to bring to the chest");
+
+return 0; // вышли под доводке
+}
+
+if(esc_route(#c_exitl[0], #1_px[0], #xy_circl[0][0], 35, "norandom") != -1){ // детект ухода за границы карты
+
+   log_t("An unsuccessful attempt to approach the found chest");
+
+ if(em_chest < 2){ // еще не залутали 2 сундука, но пробежали на край карты
+
+    log_t("2 chests were not loot");
+
+    sendmouse_mv("up");
+
+    pause_(600, 800);
+}
+else{
+
+log_t("Exit from the location");
+
+disabletimer(3); // отключить таймер до вызова ul_pos
+}
+
+return 0;
+}
+
+pause(1);
+}
+
+log_t("Did not find the chest in the allotted time");
+
+if(em_chest < 2){ // еще не залутали 2 сундука, но пробежали на край карты
+
+   log_t("2 chests were not loot");
+
+   sendmouse_mv("up");
+
+   pause_(600, 800);
+}
+
+return 0;
+}
+
+function mob_action(string action, string call){
+
+int mobs_exp = 0, temp = 0;
+
+if(action == "fight"){
+
+ if(findheapcolor(1, #c_hpdeer[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 258, 26, 389, 35, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+    log_t("Fighting the mob");
+
+    disabletimer(4);
+
+    sendmouse_mv("up"); move(0, traf_side); //отпустить все клавиши
+
+    pause_(550, 650);
+
+    sendmouse_at("down", 580, 265, 616, 277); // нажать на кнопку атаки
+
+    pause_(400, 600);                         // минимальная задержка для удара
+
+while(findheapcolor(1, #c_hpenemy[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 258, 27, 391, 34, 10, 10, 10, 10, 10, 10, main_w[0]) == 1){
+
+      mobs_exp = findheapcolor(5, #c_enemy[0], #sc_nenemy[0], 1, 1, #x_ar[0], #y_ar[0], 4, 4, 6, 6, 579, 57, 593, 71, 10, 10, 10, 10, 10, 10, main_w[0]);
+
+if(mobs_exp > 2){ // деремся пока позволяет хп или не убьем одного из 3х мобов
+
+   log_t("Fighting with more than 2 mobs at the same time");
+
+ while(mobs_exp > 2 && findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 2, 2, 3, 3, 98, 28, 101, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 1){
+
+       mobs_exp = findheapcolor(5, #c_enemy[0], #sc_nenemy[0], 1, 1, #x_ar[0], #y_ar[0], 4, 4, 6, 6, 579, 57, 593, 71, 10, 10, 10, 10, 10, 10, main_w[0]);
+
+       pause(10);
+}
+
+low_hp_esc("staff_check", "go_t"); // убежать с локации, похилится, сделать перевызов поиска сундуков
+}
+
+if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 1, 1, 2, 2, 72, 27, 76, 34, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){ // где-то на 53 хп попытка побега
+
+   log_t("Health level dropped to a critical level");
+
+   pause_(100, 200);
+
+   low_hp_esc("staff_check", "go_t");
+}
+
+pause(10);   // пока моб в таргете
+}
+
+killed_mob++; // убили моба, снялся таргет. Но мобов ожидается 1+ или последний моб трелл
+
+/*
+
+Если у нас все нормально по хп, мы бьем всех мобов в 
+радиусе по таргету, иначемы не будем агрится и похилимся
+
+*/
+
+if(mobs_exp > 1 || findheapcolor_(#c_thrl[0], #1_1_px[0], 2, 100, 10, 4, 33, 6, 94, 35, 541, 343, 15) == 1){
+
+   log_t("Changed target to another mob");
+
+   pause_(450, 650);
+
+if(find_mob() == 1)mob_action(action, call); // таргет сменился на нового моба после паузы в 650 - 750
+}
+
+mobs_exp = 0; // даже если мы не выйдем по ожиданию числа мобов, то looptime выкинет на рестарт поиска
+
+sendmouse_at("up");
+
+log_t("The mob is potentially dead");
+
+if(spot_enemy(1000, 1200) == 1){
+
+   log_t("Found next mob. Cause a fight");
+
+   mob_action(action, call);
+ }
+}
+else return; // анти агр на оленя
+
+}
+else{ // боевка стоит на авто
+
+ if(action == "tracking"){
+
+    log_t("Tracking mobs hp");
+
+    temp = gettime();
+
+while(findheapcolor(1, #c_hpenemy[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 258, 27, 391, 34, 10, 10, 10, 10, 10, 10, main_w[0]) == 1){
+
+      mobs_exp = findheapcolor(5, #c_enemy[0], #sc_nenemy[0], 1, 1, #x_ar[0], #y_ar[0], 4, 4, 6, 6, 579, 57, 593, 71, 10, 10, 10, 10, 10, 10, main_w[0]);
+
+if(mobs_exp > 2){ // деремся пока позволяет хп или не убьем одного из 3х мобов
+
+   log_t("Fighting with more than 2 mobs at the same time");
+
+  while(mobs_exp > 2 && findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 98, 28, 101, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 1){
+
+        mobs_exp = findheapcolor(5, #c_enemy[0], #sc_nenemy[0], 1, 1, #x_ar[0], #y_ar[0], 4, 4, 6, 6, 579, 57, 593, 71, 10, 10, 10, 10, 10, 10, main_w[0]);
+
+        pause(10);
+}
+
+low_hp_esc("staff_check", "null"); // возврат сюда, если фармим ресурсы для копья
+
+killed_mob = 0;
+
+return 1;
+}
+
+if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 1, 1, 2, 2, 72, 27, 76, 34, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){ // где-то на 53 хп попытка побега
+
+   log_t("Health level dropped to a critical level");
+
+   pause_(100, 200);
+
+   low_hp_esc("staff_check", "null");
+
+   killed_mob = 0;
+
+   return 1;
+}
+
+pause(10);
+}
+
+if(findheapcolor_(#c_hpdeer[0], #1_px[0], 1, 50, 3, 3, 4, 4, 258, 26, 389, 35, 10) != 1 && gettime() - temp > 1000){
+
+   log_t("The mob is potentially dead");
+
+   killed_mob++;                  // это не олень и таргет продержался хотя бы секунду
+}
+
+temp = 0;
+
+if(killed_mob > 2){
+
+   log_t("Disable auto battle");
+
+   mouse_(52, 329, 58, 335);     // снять авто
+
+if(spot_enemy(1000, 1200) == 1){ // есть мобы в округе
+
+   log_t("Changed target to another mob");
+
+   mouse_(52, 329, 58, 335);
+
+   pause_(400, 600);             // минимальная задержка для удара
+
+   mob_action(action, call);     // перевызов
+
+   return 1;                     // подразумевает что была драка с хилом после перевызова
+}
+
+disabletimer(2);
+
+pause_(400, 600);
+
+}
+else return -1;
+
+ }
+}
+
+if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 98, 28, 101, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+ 
+   heal_up("nohome", 100, "staff_check", "lh_check");
+
+   killed_mob = 0;
+}
+else{
+
+if(killed_mob > 2){ // не прошли на хил 100% или убили 3 моба
+
+   heal_up("nohome", 50, "staff_check", "lh_check");
+
+   killed_mob = 0;
+ }
+}
+
+if(call == "timer"){
+
+   log_t("Timer call");
+
+if(turn_c != 6)move(1, traf_side); // вызов функции во время поворотов вбок
+
+   enabletimer(4);
+
+   f_restart = 1; f_recall_warrior = 1;
+
+   goto_global_wait();
+}
+
+log_t("Call not from timer");
+
+return 1; // для подбора материалов в лесу
+}
+
+function ul_pos(int act, string location, string walk_type, string param){
+
+int route[2];
+
+if(param == "enemy"){ // попытка убежать с лоу хп
+
+   route[0] = esc_route(#c_exitl[0], #1_px[0], #gpit[0][0], 35, "norandom");                          // поиск пикселей конца локации
+
+log_t("Run away from the location (mob)");
+
+if(route[0] == -1){
+
+   log_t("Could not find green pixels");
+
+   route[0] = invers(esc_route(#c_enemy[0], #1_px[0], #xy_circl[0][0], 10, "random")); // не нашли? меняем направление движения от моба
+ }
+}
+else{
+
+/*
+
+последний залутанный сундук. Не прерывать направление движения. 
+Автоматически прервется, если в близком радиусе будет еще 1 сундук
+
+*/
+
+if(param == "mva_chest"){
+
+   log_t("Run away from the location (continuously)");
+
+   route[0] = traf_side;
+}
+else{
+
+if(walk_type == "zigzag"){ // путь зиг-загом с попыткой найти зеленые пиксели в дальнем радиусе
+
+   log_t("Run away from the location (zigzag)");
+
+   route[0] = esc_route(#c_exitl[0], #1_px[0], #gpit[0][0], 35, "random");
+
+if(route[0] == 0 || route[0] == 3)route[1] = rand(1, 3);
+
+else{
+
+if(rand(0, 2) > 0)route[1] = 0;
+
+else route[1] = 3;
+ }
+}
+else{         // прямой путь с попыткой найти ближайшие зеленые пиксели
+
+if(walk_type == "straight"){
+
+   log_t("Run away from the location (straight)");
+
+   route[0] = esc_route(#c_exitl[0], #1_px[0], #gpit[0][0], 35, "random");
+}
+else{
+
+messagebox_("Wrong direction");
+
+return; // если забыл устройство функции
+   }
+  }
+ }
+}
+
+re_fd:; //--------------------|
+
+if(walk_type == "straight"){                // двигаемся в одном направлении в случае прямого пути или убегаем от моба
+
+ if(param != "mva_chest")move(1, route[0]); // не нажмется, если был выход по направлению из сундука
+
+ else sendmouse_mv("up");                   // не отпустится, если был выход по подходу к доп. сундуку
+
+looptime(120000){
+
+ if(findheapcolor_(#c_exitl[0], #sc_exitl[0], 1, rand(800, 3500), 3, 3, 4, 4, 581, 58, 593, 71, 35) == 1){ // ждем зеленые пиксели вокруг персонажа
+
+    disabletimer(3);
+
+    pause_(1200, 1400);
+
+    move(0, route[0]);
+
+    break;
+  }
+ }
+}
+else{
+
+looptime(120000){
+
+ for(int i = 0; i < 2; i++){
+
+  move(1, route[i]); 
+
+if(findheapcolor_(#c_exitl[0], #sc_exitl[0], 1, rand(800, 3500), 3, 3, 4, 4, 581, 58, 593, 71, 35) == 1){ // ждем зеленые пиксели вокруг персонажа
+
+   disabletimer(3); // могут быть тормоза и можем выйти на рестарт
+
+   pause_(1200, 1400);
+
+   move(0, route[i]);
+
+   goto ex_it; //----| дойти до зоны
+}
+
+move(0, route[i]); pause_(400, 600);
+  } 
+ }
+}
+
+ex_it:; //-----------|
+
+if(findimage_(#Image_q[4][0][0], 10000, 241, 319, 421, 363, 5, 95) == 0){ // если не дошли
+
+   log_t("Loading bar waiting error. Back on pathfinding");
+
+   enabletimer(3);
+
+   goto re_fd; //-------------|
+}
+
+log_t("Waiting for loading");
+
+if(findimage_e(#Image_q[5][0][0], 120000, 459, 3, 642, 42, 5, 95) == 0){ // ждем белые пиксели книжки
+
+   log_t("Error of switching to the world map after 2 minutes of waiting");
+
+   reset_bot();
+}
+
+log_t("Successful transition to the world map");
+
+pause_(600, 900);
+
+if(act == 0){
+
+   mouse_(304, 197, 345, 211);                                          // клик по войти
+
+if(findimage_(#Image_q[1][0][0], 120000, 0, 0, 179, 55, 5, 95) == 0){   // ждем изображение класса целителя
+
+   log_t("Failed to re-enter the location (q1)");
+
+   reset_bot();
+ }
+}
+else{
+
+ if(f_combo_farm[0] == 0 && location == "forest"){
+
+    log_t("Lets go to the forest");
+
+    mouse_(87, 123, 134, 137); //клик по лесу
+
+if(findimage_(#Image_q[8][0][0], 60000, 124, 99, 524, 168, 5, 95) == 0){ // ждем панельку леса
+
+   log_t("Forest panel wait error");
+
+   reset_bot();
+}
+
+pause_(600, 900);
+
+mouse_(416, 290, 513, 307); // бежать
+
+pause_(8500, 9000);         // бежим
+
+find_event(30);             // подождать событие 900-120 мс
+
+mouse_(77, 158, 120, 171);  // войти
+
+if(findimage_(#Image_q[1][0][0], 120000, 0, 0, 179, 55, 5, 95) == 0){ // ждем изображение класса целителя
+
+   log_t("Location entry error");
+
+   reset_bot();
+ }
+}
+else{
+
+ if(f_combo_farm[0] == 1 && location == "stone"){
+
+    log_t("Lets go to the stone");
+
+    mouse_(331, 46, 366, 65); //клик по камню
+
+if(findimage_(#Image_q[6][0][0], 60000, 124, 99, 524, 168, 5, 95) == 0){ // ждем панельку камня
+
+   log_t("Stone panel wait error");
+
+   reset_bot();
+}
+
+pause_(600, 900);
+
+mouse_(425, 291, 507, 307); // бежать
+
+pause_(8500, 9000);         // бежим
+
+find_event(30);             // подождать событие
+
+mouse_(333, 78, 387, 96);   // войти
+
+if(findimage_(#Image_q[1][0][0], 120000, 0, 0, 179, 55, 5, 95) == 0){ // ждем изображение класса целителя
+
+   log_t("Location entry error");
+
+   reset_bot();
+ }
+}
+else{
+
+if(location == "home"){
+
+ if(f_combo_farm[0] == 0){      // переход с леса
+
+    log_t("Going home from the forest");
+
+    mouse_(591, 202, 625, 232); // клик по дому
+
+if(findimage_(#Image_q[7][0][0], 60000, 115, 101, 534, 225, 5, 95) == 0){ // ждем панельку дома
+
+   log_t("Home panel waiting error");
+
+   reset_bot();
+}
+
+pause_(600, 900);
+
+mouse_(414, 257, 518, 275);  // бежать
+
+pause_(8500, 9000);          // бежим
+
+find_event(30);              // подождать событие
+
+mouse_(591, 250, 634, 263);  // войти
+
+if(findimage_(#Image_q[1][0][0], 120000, 0, 0, 179, 55, 5, 95) == 0){ // ждем изображение класса целителя
+
+   log_t("Location entry error");
+
+   reset_bot();
+ }
+}
+else{
+
+if(f_combo_farm[0] == 1){ // переход с камня
+
+   log_t("Going home from the stone");
+
+   mouse_(258, 291, 270, 301);                                            // клик на дом
+
+if(findimage_(#Image_q[7][0][0], 120000, 124, 125, 524, 195, 5, 95) == 0){ // ждем панельку
+
+   log_t("Home panel waiting error");
+
+   reset_bot();
+}
+
+pause_(600, 900);
+
+mouse_(413, 257, 518, 275); // бежать
+
+pause_(8500, 9000);         // бежим
+
+find_event(30);             // подождать событие
+
+mouse_(256, 279, 278, 287); // сместить фокус камеры
+
+pause_(600, 900);
+
+mouse_(304, 197, 345, 211); // войти
+
+if(findimage_(#Image_q[1][0][0], 120000, 0, 0, 179, 55, 5, 95) == 0){ // ждем изображение класса целителя
+
+   log_t("Location entry error");
+
+   reset_bot();
+}
+
+     }
+    }
+   }
+  }
+ }
+}
+
+log_t("Finished the transition");
+
+enabletimer(3);
+}
+
+function find_start_title(string unit_type){
+
+int temp = -1;
+
+for(int i = 0; i <= 3; i++){ // определить позицию спавна (верх, право, лево, низ)
+
+ if(findimage_(#Image_e[i][0][0], 1, 539, 17, 637, 109, 45, 90) == 1){
+
+    temp = i;
+
+    break;
+ }
+}
+
+log_t("Spawn position: "+format(temp));
+
+if(temp != -1){
+
+ if(unit_type == "manager"){ // может быть 4 стартовых позиицй (лево,право,низ, верх)
+
+  if(temp == 0){move_to_st(3, 1); pause_(400, 600); return;}
+}
+else{ //воин
+
+// может быть 3 стартовые позиции (лево,право,низ)
+
+ }
+}
+else{
+
+log_t("Error in determining the spawn position");
+
+reset_bot();
+ }
+}
+
+function move_to_st(int pos_1, int pos_2){
+
+log_t("Finding start tile");
+
+int m_pos[2] = {pos_1, pos_2}; // направления движения через запятую
+
+for(int rt = 0; rt < 5; rt++){ // 4 раза попытается найти путь в течении 8 сек
+
+ looptime(8000){
+
+  for(int h = 0; h < 2; h++){  // движение зиг-заг
+
+      move(1, m_pos[h]); pause_(200, 220); 
+
+for(int i = 0; i < 4; i++){    // проверка на пиксели пути для вызова res_managment
+
+ if(findheapcolor(1, #c_mgray[0], #sc_mgray[0], 1, 1, #x, #y, 2, 2, 3, 3, xy_circl[i][0], xy_circl[i][1], xy_circl[i][2], xy_circl[i][3], 5, 5, 5, 5, 5, 5, main_w[0]) == 1){
+
+    pause_(400, 500);          // еще подвигаться в том направлении не много
+
+    move(0, m_pos[h]);
+
+    log_t("Tile found");
+
+    return;
+ }
+
+pause(1);
+}
+
+move(0, m_pos[h]); pause_(200, 220);
+ }
+}
+
+ul_pos(0, "-1", "zigzag", "-1"); // перезайти в локацию если не смогли найти стартовый тайтл
+
+pause_(600, 900);
+}
+
+log_t("Couldnt find the starting tile");
+
+reset_bot();
+}
+
+function move_res(int side_come_chest, string caller_name, string type_res, int side_away_chest){
+
+log_t("Move res");
+
+int code_return = 0;
+
+if(side_come_chest != -1){
+
+   home_chest("come", side_come_chest);
+
+   pause_(1100, 1600); 
+
+   panel("open", 3, 537, 309, 566, 342);
+
+   pause_(400, 700);
+}
+
+if(caller_name == "warrior"){
+
+ if(type_res == "recyclable"){ // ресурсы перерабатываемые
+
+// сложить перерабатываемые ресурсы
+
+    pause_(400, 700);
+
+    code_return = 0; // если все сложили = 1
+}
+else{
+
+pause_(400, 600);
+
+mouse_(404, 317, 460, 336); // сложить всё
+
+pause_(1400, 1401);
+
+// нету кнопки "сложить все" и в сундуке последняя ячейка пустая - сложили все
+
+if(findimage(1, #Image_q[9][0][0], -1, #x, #y, 515, 132, 575, 189, 15, 15, 15, 15, 15, 15, 95, 0, main_w[0]) == 1 
+
+&& findimage(1, #Image_q[21][0][0], -1, #x, #y, 359, 304, 482, 353,  5,  5,  5,  5,  5,  5, 95, 0, main_w[0]) == 1){
+
+log_t("Added all resources");
+
+code_return = 2;
+
+fl_chest_ct = 0; // обнулить счетчик полных сундуков
+}
+else{
+
+log_t("Not all resources have been put in");
+
+if(side_come_chest != -1 || side_away_chest != -1)change_title++; // 1 и 2 сундуки полны ресурсов, в след. раз идти на +1 клетку дальше
+
+code_return = 0; 
+
+fl_chest_ct++;
+
+if(fl_chest_ct == 4){
+
+   log_t("4 chests in a row are clogged");
+
+   panel("close");
+
+   pause_(600, 800);
+
+   reset_bot();
+ }
+}
+
+log_t("If there are stones logs staves or spears in the chest - take");
+
+if(findimage_(#Image_y[4][0][0], 100, 325, 42, 575, 286, 35, 70) == 1){ // камень
+
+   sendmousedbl(LEFT, x+330+rand(-5,5), y+47+rand(-5,5), main_w[0]);
+
+   pause_(400, 600);
+}
+
+if(findimage_(#Image_y[5][0][0], 100, 325, 42, 575, 286, 35, 70) == 1){ // бревно
+
+   sendmousedbl(LEFT, x+330+rand(-5,5), y+47+rand(-5,5), main_w[0]);
+
+   pause_(400, 600);
+}
+
+if(findimage_(#Image_w[4][0][0], 100, 325, 42, 575, 286, 35, 70) == 1){ // посох
+
+   sendmousedbl(LEFT, x+330+rand(-5,5), y+47+rand(-5,5), main_w[0]);
+
+   pause_(400, 600);
+}
+
+if(findimage_(#Image_w[2][0][0], 100, 325, 42, 575, 286, 35, 70) == 1){ // копье
+
+   sendmousedbl(LEFT, x+330+rand(-5,5), y+47+rand(-5,5), main_w[0]);
+
+   pause_(400, 600);
+}
+
+//code_return = 0; 
+
+//pause_(700, 1000);
+
+ }
+}
+else{ // вызов от менеджера. Из функции res_managment не нужно выходить
+
+f_fold_res = 0; // если все сложили
+
+code_return = 0;
+}
+
+panel("close"); 
+
+if(side_away_chest != -1){
+
+   pause_(1000, 1500);
+
+   home_chest("away", side_away_chest);
+
+   pause_(600, 900);
+}
+
+return code_return;
+}
+
+function panel(string type, int image, int xs, int ys, int xf, int yf){
+
+if(type == "open"){ // открыть
+
+   log_t("Panel open: "+ format(image));
+
+   disabletimer(3);    // отменить таймер слежения рестарта т.к сморим по хп
+
+   mouse_(xs, ys, xf, yf);
+
+if(findimage_(#Image_q[image][0][0], 8000, 0, 0, 650, 92, 5, 90) == 0){ // вся верхняя полоска в поиске
+
+   log_t("Panel opening error");
+
+   reset_bot();
+ }
+}
+else{ // закрыть
+
+log_t("Panel close");
+
+mouse_(618, 15, 643, 323);
+
+if(findimage_(#Image_q[1][0][0], 8000, 0, 0, 179, 55, 5, 95) == 0){
+
+   log_t("Panel close error");
+
+   reset_bot();
+}
+
+enabletimer(3);
+ }
+}
+
+function thing(string action, string side, int count_obj, int l_bord, int r_bord, int ar_type){
+
+log_t("inventory / chest items: " + action);
+
+if(ad_im[ar_type][1] > 9){ // копирование массива в Image происходит через movememory, поэтому нужен обработчик ошибок
+
+   messagebox_("Array copy error "+format(ar_type));
+
+   return;
+}
+
+int s_cr[4], Image[10][50][50], f_search;
+
+initialarray(#Image[0][0][0], 0);
+
+if(side == "inventory"){
+
+s_cr[0] = 34;  s_cr[1] = 63; s_cr[2] = 277; s_cr[3] = 256;
+}
+else{
+
+if(side == "chest"){
+
+s_cr[0] = 325; s_cr[1] = 40; s_cr[2] = 575; s_cr[3] = 188;
+}
+else{
+
+messagebox_("The wrong side"); activate(main_w[0]);
+
+return -1;
+ }
+}
+
+if(count_obj == 2)f_search = 1; // при поиске > 1 картинки не искать там где найдено 
+
+else f_search = 0;
+
+int byte = ad_im[ar_type][1] * 50 * 50 * 4;                    // передать весь массив в функцию
+
+MoveMemory(address(#Image[0][0][0]), ad_im[ar_type][0], byte); // обращаемся по индексу т.к адрес массива из которого будем копировать писали заранее
+
+for(int i = l_bord; i <= r_bord; i++){                                                         // поиск заданных картинок
+
+ if(findimage(count_obj, #Image[i][0][0], -1, #x_ar[0], #y_ar[0], s_cr[0], s_cr[1], s_cr[2], s_cr[3], 35, 35, 35, 35, 35, 35, 70, f_search, main_w[0]) == count_obj){  // найдена картинка
+
+    sendmouse(LEFT, x_ar[0] + s_cr[0] + rand(1, 10), y_ar[0] + s_cr[1] + rand(1, 10), main_w[0]); // выбрать
+ 
+    pause_(400, 600);
+
+if(action == "eat"){
+
+ while(findimage(1, #Image[i][0][0], -1, #x, #y, s_cr[0], s_cr[1], s_cr[2], s_cr[3], 35, 35, 35, 35, 35, 35, 70, 0, main_w[0]) == 1){ // кушать пока найдена
+
+       mouse_(49, 318, 120, 335); // клик применить
+
+       pause_(1200, 1400);
+ }
+}
+else{
+
+ if(action == "delete"){
+
+    mouse_(249, 319, 261, 335); // удалить
+
+if(findimage_(#Image_q[14][0][0], 5000, 152, 98, 499, 233, 5, 95) == 0){
+
+   log_t("Error in the search for the confirmation panel for deleting an item");
+
+   reset_bot();
+}
+
+pause_(400, 600);
+
+mouse_(387, 243, 483, 264); // подт. удаление
+
+pause_(400, 600);
+}
+else{
+
+messagebox_("Invalid instruction"); activate(main_w[0]);
+
+return -1;
+ }
+}
+
+pause_(200, 300);
+}
+
+pause(1);
+ }
+}
+
+function heal_up(string mypos_loc, int heal_size, string eq_staff, string down_hp_check){
+
+log_t("Need to replenish health");
+
+if(f_spear_inv_av == 1 && findimage_(#Image_w[2][0][0], 100, 572, 247, 632, 301, 35, 70) == 0){ // копья нету в руке но есть в инвентаре
+
+   log_t("Spear in hand is missing");
+
+   f_spear_inv_av = 0;  // нужно скрафтить как перейдем на следующую локацию
+}
+
+if(eq_staff == "staff_check"){
+
+   log_t("Trying to switch to the staff");
+
+   panel("open", 0, 464, 339, 475, 349); // открыть инвентарь
+
+   pause_(700, 1000);
+
+if(heal_size == 100 && findimage_(#Image_u[2][0][0], 100, 32, 56, 279, 296, 35, 70) == 1){     // бутылка на хил
+
+   log_t("Found healing salve");
+
+   mouse_(x+32, y+56, x+32+imagewidth(#Image_u[2][0][0]), y+56+imageheight(#Image_u[2][0][0])); // выбрать
+
+   pause_(400, 600);
+
+   mouse_(48, 317, 122, 337); // применить
+
+if(findimage_(#Image_q[1][0][0], 8000, 0, 0, 179, 55, 5, 95) == 0){
+
+   log_t("Error exit from inventory after application healing salve");
+
+   reset_bot();
+}
+
+enabletimer(3);     // выходим автоматом после кнопки применить
+
+pause_(7500, 8500); // статик, т.к индикатор времени применения хила белый и мы можем найти не те пиксели
+
+log_t("Successfully");
+
+return 1;
+}
+else{
+
+if(findimage_(#Image_u[1][0][0], 100, 32, 56, 279, 296, 35, 70) == 1){ // нашли бинт
+
+   log_t("Found bandages");
+
+   mouse_(x+32, y+56, x+32+imagewidth(#Image_u[1][0][0]), y+56+imageheight(#Image_u[1][0][0]));
+
+   pause_(400, 600);          // регенит 40 хп
+
+   mouse_(48, 317, 122, 337); // применить
+
+   pause_(400, 600);
+ }
+}
+
+if(findimage_(#Image_w[4][0][0], 100, 32, 56, 279, 296, 35, 70) == 1){                        // нашли посох
+
+   log_t("Found the staff");
+
+   mouse_(x+32, y+56, x+32+imagewidth(#Image_w[4][0][0]), y+56+imageheight(#Image_w[4][0][0])); // выбрать
+
+   pause_(300, 600);
+
+   mouse_(50, 319, 124, 336); // еквип
+
+   pause_(500, 800);
+
+   panel("close");
+}
+else{
+
+log_t("Didn^'t find the staff");
+
+pause_(500, 800);
+
+panel("close"); // закрыть
+
+f_restart = 1; f_ucord = 0;  sit_c  = 0; killed_mob = 0; // не можем дальше продолжать фарм локации без посоха на хил
+
+f_equip = 0;   em_chest = 0; f_mch = 0;  turn_c = 0; res_c = 0;
+
+initialarray(#xg[0], 0); initialarray(#yg[0], 0); initialarray(#av_route[0], 0);
+
+if(mypos_loc != "home"){ // вызов был не с дома
+
+   disabletimer(4);
+
+   ul_pos(1, "home", "straight", "-1");
+}
+
+pause_(600, 800);
+
+goto_global_wait(); // перевызов функции warrior с проверкой снаряжения
+ }
+}
+
+get_cord_hp(#tmp_i[0]);         // взять координаты хп 
+
+log_t("Heal "+format(heal_size)+" hp");
+
+pause_(2000, 3000);             // картинки могут подлагать и мы сразу их найдем (хоть кд и не началось)
+
+for(int i = 0; i < 17500; i++){ // не looptime т.к ul_pos может занять больше времени, а looptime будет идти в это время
+
+ if(down_hp_check == "lh_check" && 
+
+    findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x_t[1], #y_t[1], 3, 3, 4, 4, tmp_i[0]-6, 28, tmp_i[0]+5, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+/*
+
+перезайти в локацию, если тебя начали бить пока ты хилишься,
+после презахода, продолжить ждать отхил
+
+*/
+
+log_t("Began to beat while waiting for a heal");
+
+ul_pos(0, "-1", "straight", "enemy");
+
+pause_(500, 700);
+
+traf_side = esc_route(#c_exitl[0], #1_px[0], #xy_circl[0][0], 35, "random"); // определить сторону зеленых пикселей
+ 
+traf_side = invers(traf_side);
+}
+
+if(heal_size == 100){ // ждем полный откат 2х способностей
+
+ if(findimage(1, #Image_q[10][0][0], -1, #x, #y, 588, 189, 613, 213, 5, 5, 5, 5, 5, 5, 95, 0, main_w[0]) == 1 &&
+ 
+    findimage(1, #Image_q[15][0][0], -1, #x, #y, 548, 205, 565, 219, 5, 5, 5, 5, 5, 5, 95, 0, main_w[0]) == 1){
+
+    pause_(600, 900);
+
+if(rand(0, 2) > 0){ // случайный, полный порядок захила
+
+   loop(2){ mouse_(536, 221, 559, 242); pause_(100, 200); }
+
+   pause_(500, 800); 
+
+   mouse_(579, 199, 601, 220); // верхний
+}
+else{
+
+mouse_(579, 199, 601, 220);
+
+pause_(500, 800);
+
+loop(2){ mouse_(536, 221, 559, 242); pause_(100, 200); }
+}
+
+pause_(500, 800);
+
+break;
+ }
+}
+else{ // ждем откат одной из способностей
+
+if(findimage(1, #Image_q[10][0][0], -1, #x, #y, 588, 189, 613, 213, 5, 5, 5, 5, 5, 5, 95, 0, main_w[0]) == 1){
+
+   pause_(400, 600);
+
+   mouse_(579, 199, 601, 220);
+
+   pause_(500, 800);
+ 
+   break;
+}
+else{
+
+if(findimage(1, #Image_q[15][0][0], -1, #x, #y, 548, 205, 565, 219, 5, 5, 5, 5, 5, 5, 95, 0, main_w[0]) == 1){
+
+   pause_(400, 600);
+
+   mouse_(536, 221, 559, 242);
+
+   pause_(500, 800);
+
+   break;
+  }
+ }
+}
+
+if(i == 17490){
+
+   log_t("Heal countdown wait error");
+
+   reset_bot();
+}
+
+pause(1);
+}
+
+pause_(700, 900);
+
+panel("open", 0, 464, 339, 475, 349);
+
+log_t("An attempt to select a spear with the lowest HP");
+
+int xc[2], yc[2], count_spear = findimage(2, #Image_w[2][0][0], -1, #xc[0], #yc[0], 32, 56, 279, 296, 35, 35, 35, 35, 35, 35, 70, 1, main_w[0]);
+
+if(count_spear != 0){
+
+   log_t("Copies found: " + format(count_spear));
+
+   initialarray(#tmp_i[0], 0);
+
+for(int d = 0; d < count_spear; d++){ // у кого больше пикселей хп
+
+    tmp_i[d] = findheapcolor(38, #c_hp_item[0], #1_px[0], 1, 1, #x_ar[0], #y_ar[0], 1, 1, 1, 1, xc[d]+32-25, yc[d]+56+29, xc[d]+32+16, yc[d]+56+34, 10, 10, 10, 10, 10, 10, main_w[0]);
+}
+
+if(count_spear == 1 || tmp_i[0] < tmp_i[1])mouse_(xc[0]+32, yc[0]+56, xc[0]+32+imagewidth(#Image_w[2][0][0]), yc[0]+56+imageheight(#Image_w[2][0][0])); // выбрать
+
+else                                       mouse_(xc[1]+32, yc[1]+56, xc[1]+32+imagewidth(#Image_w[2][0][0]), yc[1]+56+imageheight(#Image_w[2][0][0]));
+
+pause_(700, 1000);
+
+mouse_(50, 319, 124, 336); // еквип
+}
+else{
+
+log_t("Spear search error. remove the staff");
+
+loop(2){ // дабл клик по посоху
+
+mouse_(323, 131, 336, 142);
+
+pause_(100, 200);
+
+ }
+}
+
+pause_(500, 700);
+
+panel("close"); //закрыть
+
+pause_(800, 1100);
+
+log_t("End heal");
+}
+
+/*
+function restart(int f_start){
+
+int time_restart = 0;
+
+// старт с эмулятора или рабочего стола. Даже если мы до этого не получали указатель, он сам его получит, главное имя эмулятора
+
+if(findimage_t3(#Image_q[1][0][0], 1000, 0, 0, 179, 55, 5, 95) == 0){
+
+ for(int i = 1; i <= 4; i++){            // 4 рестарта
+
+  if(f_start != 1){                       //флаг различает когда первый старт и не нужно ждать, и когда запускать рестарты
+
+     sendmessage(WM_CLOSE, 0, 0, emul_o);
+
+     while(wait_emul_control(1))pause(10); // ждем пока эмулятор не закрылся полностью
+
+     time_restart = rand(300000, 900000); // 5-15 минут рестарт
+
+//---log попытка запуска эмулятора n из 4 будет произведена через time_restart*15*1000 минут
+
+     looptime(time_restart)pause(1);
+}
+
+f_start = 0;
+
+start(patch);
+
+ if(wait_emul_control(360000) == 0){ // ждем запуска эмулятора 6 минут
+
+    //---log ошибка старта эмулятора |отдельная для таймеров|
+}
+
+    //---else log эмулятор запущен |отдельная для таймеров|
+
+if(findimage_t3(#Image_q[1][0][0], 360000, 0, 0, 179, 55 5, 95) == 0){ // ждем игру 6 минут
+
+   //---log ошибка запуска игры  |отдельная для таймеров|
+}
+else return 1; //---log игра запущена паусе 3 секунды |отдельная для таймеров|
+
+ }
+}
+else return 1;                          // старт с начальной позиции(пользователь пусть разбирается)
+
+return 0;
+}
+
+function wait_emul_control(int pfd){
+
+looptime(pfd){
+
+if(window("ScreenBoardClassWindow", "Qt5QWindowIcon", window (emul_name, "Qt5QWindowIcon", -1)) == 1){
+
+main_w[0] = window("ScreenBoardClassWindow", "Qt5QWindowIcon", window (emul_name, "Qt5QWindowIcon", -1));
+
+return 1;
+ }
+}
+
+return 0;
+}
+*/
+
+function update_hwnd_group(string action){
+
+int same_param = 0, wait_win_open = 0;
+
+try_get_p:; //-----------------------| иногда окно скриптов открывается не сразу
+
+GetWindowThreadProcessId(formatwi(emul_o), address(#tmp_i[0]));
+
+int proc_wl = listwinprocess(#temp_w[0], tmp_i[0]);
+
+log_t("Parameters of the received pointers: ");
+
+for(int i = 0; i < proc_wl; i++){ // в логи выводим все параметры в независимости от порядка
+
+    setwindowparam(temp_w[i]);
+
+log_t(main_w.name[i]+" "+main_w.class[i]+" "+format(main_w.left[i])+" "+format(main_w.top[i])+" "+
+
+format(main_w.widthclient[i])+" "+format(main_w.heightclient[i]));
+}
+
+for(int v = 0; v < proc_wl; v++){
+
+ if(temp_w.name[v] == "Form")main_w[1] = temp_w[v];
+
+else{
+
+if(temp_w.class[v] == "Qt5QWindow" && temp_w.left[v] != emul_o.left + 2 && temp_w.top[v] != emul_o.top + 32){
+
+/*
+
+У нас есть дубликат имени и класса указателя окна скриптов
+дубликат всегда существует по заданным координатам от позиции основного окна
+
+*/
+
+if(same_param == 0){
+
+    main_w[2] = temp_w[v];
+
+    main_w.widthclient[2] = 769;
+
+    main_w.heightclient[2] = 224;
+
+    moveclient(main_w[2]);
+
+    same_param = 1;
+}
+else{
+
+messagebox_("Script window position error.^r^nMove the script window to^r^nanother location to get a pointer");
+
+goto_global_wait();
+   }
+  }
+ }
+}
+
+for(int sq = 0; sq < 3; sq++){
+
+ if(formatwi(main_w[sq]) > 0)setwindowparam(main_w[sq]);
+
+else{
+
+if(action == "wait_point"){
+
+   same_param = 0;
+
+if(wait_win_open > 7){ // ждем уже 7 секунд получения указателя на одно из окон
+
+   messagebox_("Failed to get pointers");
+
+   goto_global_wait();
+}
+else{
+
+wait_win_open++;
+
+pause_(1000, 1001);
+
+goto try_get_p; //-------------------|
+
+    }
+   }
+  }
+ }
+}
+
+function low_hp_esc(string call_type, string answer){
+
+log_t("Trying to escape with low health");
+
+sit_c = 0; f_mch = 0; turn_c = 0; res_c = 0;
+
+disabletimer(4);
+
+sendmouse_at("up"); // не вызовется если клавиша не нажата
+
+ul_pos(0, "-1", "straight", "enemy"); // перезайти в локацию
+
+pause_(800, 1200); 
+
+traf_side = esc_route(#c_exitl[0], #1_px[0], #xy_circl[0][0], 35, "random"); // определить сторону зеленых пикселей
+ 
+traf_side = invers(traf_side);                                               // сменить направление от них
+
+if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 98, 28, 101, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+   heal_up("nohome", 100, call_type, "lh_check");
+}
+else{
+
+ if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, 133, 27, 136, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+    heal_up("nohome", 50, call_type, "lh_check");                          // выйдет досрочно если нету посоха на хил
+ }
+}
+
+pause_(400, 600);
+
+if(answer == "go_t"){ // вызов с драки не под авто
+
+   log_t("call not from auto");
+
+   move(1, traf_side);                                                          // старт всегда с локации
+
+   enabletimer(4); 
+
+   f_restart = 1; f_recall_warrior = 1;
+
+   goto_global_wait();
+}
+
+log_t("Call auto");
+}
+
+CREATE_TIMER(1, 200){ // следит за хп если в нас бьет лучник пока мы около сундука
+
+if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x_t[1], #y_t[1], 3, 3, 4, 4, tmp_i[0], 28, tmp_i[0]+5, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+   disabletimer(1);
+
+if(findimage_t3(#Image_q[1][0][0], 100, 0, 0, 179, 55, 10, 90) == 1)mob_action("fight", "timer"); // хп упало, мы нашли картинку рестартов
+ }
+}
+
+CREATE_TIMER(2, 100){ // доски, камни для инструментов
+
+if(findimage(1, #Image_q[18][0][0], -1, #x_t[2], #y_t[2], 335, 137, 437, 188, 5, 5, 5, 5, 5, 5, 95, 0, main_w[0]) == 1){
+
+ while(findimage(1, #Image_q[18][0][0], -1, #x_t[2], #y_t[2], 335, 137, 437, 188, 5, 5, 5, 5, 5, 5, 95, 0, main_w[0]) == 1)pause(10);
+
+       wood++;
+
+       pause(300);
+}
+
+if(findimage(1, #Image_q[17][0][0], -1, #x_t[2], #y_t[2], 335, 137, 437, 188, 5, 5, 5, 5, 5, 5, 95, 0, main_w[0]) == 1){
+
+ while(findimage(1, #Image_q[17][0][0], -1, #x_t[2], #y_t[2], 335, 137, 437, 188, 5, 5, 5, 5, 5, 5, 95, 0, main_w[0]) == 1)pause(10);
+
+       stone++;
+
+       pause(300);
+ }
+}
+
+CREATE_TIMER(3, 1000){ // рестарты
+
+if(findimage_t3(#Image_q[1][0][0], 100, 0, 0, 179, 55, 10, 90) == 0){ // чекаем переодически изображения класса целителя
+
+ if(findimage_t3(#Image_q[16][0][0], 10000, 248, 298, 399, 342, 10, 90) == 1){ // мб смерть
+
+    disabletimer(1); disabletimer(2); disabletimer(4);
+
+    sendmouse_mv("up"); move(0, traf_side); sendmouse_mv("up");
+
+    pause_(6000, 8000);
+
+    mouse_(277, 313, 381, 330); // нажать на возрождение
+
+if(findimage_t3(#Image_q[1][0][0], 120000, 0, 0, 179, 55, 10, 90) == 0){ // ждем возрождения
+
+   log_t("Revival error");
+
+   reset_bot();
+}
+else{
+
+log_t("Restart due to death");
+
+wood = 0; stone = 0; f_spear_inv_av = 0; f_equip = 0; f_fold_res = 0; f_recall_warrior = 0; f_ucord = 0; f_mch = 0;
+
+sit_c = 0; killed_mob = 0; res_c = 0; turn_c = 0; loc_farm_nt = 0; loc_farm_l = 0; fl_chest_ct = 0; traf_side = 0;
+
+em_chest = 0;
+
+initialarray(#xg[0], 0); initialarray(#yg[0], 0); initialarray(#av_route[0], 0);
+
+f_restart = 1;
+
+goto_global_wait();
+ }
+}
+else{
+
+log_t("Restarts in development");
+
+reset_bot();
+  }
+ }
+}
+
+CREATE_TIMER(4, 100){ // отслеживание мобов
+
+if(find_mob() == 1)mob_action("fight", "timer"); // нашли моба и взяли его в таргет
+}
+
