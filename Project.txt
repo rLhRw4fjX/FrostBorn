@@ -1,0 +1,460 @@
+﻿/*
+При разработке: debug_adm = 1 
+
+иначе: debug_adm = 0
+
+//---------------------------------------------|
+
+- Если обновил ресурсы:
+
+  - Поменяй файл обновления и resource
+
+  - поменяй наличие новой версии на сервере на 0
+
+  - Собери .exe, загрузи на сервер кибор
+
+  - Загрузи собранный .exe на свой сервер
+
+  - поменяй наличие новой версии на сервере
+*/
+
+int debug_adm = 1; string path_dev_rel;
+
+if(debug_adm == 0){
+
+   options("stop","F1");
+
+   options("close", 0);
+
+   path_dev_rel = pathfolder();
+}
+else path_dev_rel = "C:\_work\projects_\FrostBorn\Version\";
+
+//-------------------------------------------------------------|
+
+int tmp_i[2]; char buffer_i[9999];
+
+#definefile "C:\_work\projects_\FrostBorn\Version\Extra_files\Winapi_const.txt"; 
+
+#include    "C:\_work\projects_\FrostBorn\Version\Extra_files\Winapi.txt";
+
+#include    "C:\_work\projects_\FrostBorn\Version\Var.txt";                // основные переменные
+
+#include    "C:\_work\projects_\FrostBorn\Version\Extra_files\func_C.txt"; // вспомогательные фнукции
+
+#include    "C:\_work\projects_\FrostBorn\Version\Extra_files\func_F.txt"; // основные функции
+
+if(IsUserAnAdmin() == 0){
+
+   messagebox_("Run the program as administrator");
+
+   close_();
+}
+
+if(debug_adm == 0 && resource(#buffer_i[0], "C:\_work\projects_\FrostBorn\Version\Updater\1.00") == -1){ // файла версии не будет в .exe загруженном на сервер
+
+   int Size_B = sendgetweb(#buffer_i[0], "", "GET", "https:/^/upfttx.xyz", "fbornst/ver_av");
+
+   txt_temp[1] = format(#buffer_i[0]);
+
+   regexsearch(1, #txt_temp[0], txt_temp[1], "404 Not Found");
+
+if(Size_B > 0 && txt_temp[0] != "404 Not Found"){
+
+ if(formatsn(txt_temp[1]) == 1){
+
+    messagebox_("A new version of bot resources has been found.^r^nThe program will be automatically updated and restarted.");
+
+if(debug_adm == 0)start(path_dev_rel + "Updater.exe");
+
+}
+else{
+
+messagebox_("The new version of the resources has not^r^n yet been uploaded to the server. Try later");
+}
+
+close_();
+}
+else{
+
+messagebox_("Failed to check for updates");
+ }
+}
+
+external (INT, "GetFileAttributes", "GetFileAttributesA","Kernel32.dll");
+ external(INT, "CreateDirectory",   "CreateDirectoryA",  "Kernel32.dll");
+
+//--------анпаки и некоторые dll
+
+if(GetFileAttributes(path_dev_rel+"\dll") < 1){
+
+    CreateDirectory(path_dev_rel+"\dll", 0);
+}
+
+unpack("C:\_work\projects_\FrostBorn\Version\dll\3.dll", path_dev_rel+"dll\3.dll", 0);
+
+unpack("C:\_work\projects_\FrostBorn\Version\README.docx", path_dev_rel+"README.docx", 0);
+
+unpack("C:\_work\projects_\FrostBorn\Version\Updater\Updater.exe", path_dev_rel+"Updater.exe", 0);
+
+external(INT, "load_image", "load_image", path_dev_rel+"dll\3.dll");
+
+for(int v = 0, f = 0; v < sizearray(ad_im); v++){           // пройтись по адресам массивов
+
+ for(int j = 0; j < ad_im[v][1]; j++){                      // загрузить изображения соотв. размеру каждого массива изображений
+
+  if(resource(#buffer_i[0], "C:\_work\projects_\FrostBorn\Version\Img\"+m_namei[f]+"\"+m_namei[f]+format(j)+".bmp") < 0){
+
+     messagebox_("Image loading error "+format(j)+m_namei[f]);
+
+     close_();
+}
+else load_image(address(#buffer_i[0]), ad_im[v][0] + j * 50 * 50 * 4, 50, 50);
+
+/*
+j - первый элемент трехмерного массива
+
+50 - размер ячейки массива 
+
+4 - число байт занимаемых в int
+*/
+
+initialarray(#buffer_i[0], 0);
+}
+
+f++;
+}
+
+getdisplay(tmp_i[0], x, y);
+
+if(senddisplay(32, x, y) == 0){
+
+   messagebox_("Color depth setting error. Set color depth = 32 manually");
+}
+
+x=x/2-125; y=y/2-110; // ранее брали разрешение экрана
+
+createdialog(0, COMBO, #ps_combo_farm[0][0], #t_combo_farm[0][0], #s_combo_farm[0], #f_combo_farm[0] |
+                CHECK, #ps_check[0][0],      #txt_check[0],       #f_check[0]);
+
+if(debug_adm == 0)tmp_i[0] = 3;
+
+else tmp_i[0] = 1;
+
+showdialog(0, "Warrior", x, y, 205, 238, tmp_i[0], 0);
+
+wait:;
+
+if(f_restart == 1){
+
+   f_restart = 0; 
+
+loop(){ // основная функция бота
+
+warrior();
+
+pause(1);
+ }
+}
+
+loop()pause(10);
+
+function getmessage(0, WM_CREATE){
+
+int hwnd = gethwnd(0); dialog_0 = formatiw(hwnd);
+
+activate(formatiw(hwnd));
+
+SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) + WS_EX_APPWINDOW);
+
+RegisterHotKey(hwnd, 1, MOD_ALT, 0x51);
+
+main_d[0] = CreateWindow(0, "STATIC", "Stopping the program: Alt + q", 1342177280,          10,  12,  200, 15, hwnd, 0, 0, 0);
+main_d[1] = CreateWindow(0, "STATIC", "",                              16+1342177280,       10,  110, 184, 1,  hwnd, 0, 0, 0);
+main_d[4] = CreateWindow(0, "STATIC", "Farm locations:",               1342177280,          10,  36,  75,  15, hwnd, 0, 0, 0);
+main_d[5] = CreateWindow(0, "BUTTON", "Window test",                   768+8192+1342177280, 10,  122, 87,  33, hwnd, 0, 0, 0);
+main_d[2] = CreateWindow(0, "BUTTON", "Start",                         768+8192+1342177280, 10,  165, 180, 33, hwnd, 0, 0, 0);
+main_d[3] = CreateWindow(0, "BUTTON", "Resize window",                 768+8192+1342177280, 105, 122, 87,  33, hwnd, 0, 0, 0);
+
+for (int iq = 0; iq < 6; iq++)sendmessage(WM_SETFONT, font, 1, formatiw(main_d[iq]));
+}
+
+function getmessage(0, WM_COMMAND){
+
+if(message.lparam == main_d[2]){ // старт бота
+
+ if(GetFileAttributes("C:\Users\"+UserName+"\AppData\Local\Nox\record\1ebd37c241024c199cba33f7db835052") < 1 || 
+
+    GetFileAttributes("C:\Users\"+UserName+"\AppData\Local\Nox\record\records"                         ) < 1 ){
+
+messagebox_("Check for the files: ^"1ebd37c241024c199cba33f7db835052^" and"+"^r^n"+" ^"records^" in the folder ^"%LOCALAPPDATA%\Nox\record^"");
+
+return;
+}
+
+ShowWindow(gethwnd(0), 0);
+
+if(GetFileAttributes(path_dev_rel+"\Log") < 1){//Проверка папки логов и скринов
+
+   CreateDirectory(path_dev_rel+"\Log", 0);
+
+   CreateDirectory(path_dev_rel+"Log\Log_screen", 0);
+}
+else{
+
+ if(GetFileAttributes(path_dev_rel+"Log\Log_screen") < 1){
+
+    CreateDirectory(path_dev_rel+"Log\Log_screen", 0);
+ }
+}
+
+log_t("Start___________________|");
+
+while(formatwi(main_w[0]) < 0){ // параметры обновятся при полном обновлении
+
+      main_w[0] = window ("ScreenBoardClassWindow", "Qt5QWindowIcon", window (emul_name, "Qt5QWindowIcon", -1));
+
+      pause(100);
+}
+
+emul_o = window (emul_name, "Qt5QWindowIcon", -1); // 650 366
+
+if(emul_o != 0){
+
+   update_hwnd_group("null"); // какие есть указатели - обновить
+
+if(formatwi(main_w[2]) < 0){             // окна скриптов нету
+
+ if(formatwi(main_w[1]) > 0){            // есть боковая панель
+
+    sendmouse(LEFT, 18, 209, main_w[1]); // открыть скрипты
+
+    pause_(200, 250);
+
+    update_hwnd_group("wait_point");     // обновить все указатели
+}
+else{
+
+messagebox_("Error updating script control parameters in nox. Try again");
+
+return;
+ }
+}
+
+move_group_nw(-500, -500);
+}
+else{
+
+messagebox_("Error getting the pointer to the main window");
+
+return;
+}
+
+get_point = 1;
+
+SetWindowLong(formatwi(emul_o), GWL_EXSTYLE, WS_EX_NOACTIVATE);
+
+if(f_check[1] == 1)visualwindow(0, 0, 0, 650, 366, 0, 0 , 100, main_w[0]);
+
+f_start_bot = 1;
+
+enabletimer(3);
+
+loop(){ // основная функция бота
+
+warrior();
+
+pause(1);
+ }
+}
+
+if(message.lparam == main_d[3]){
+
+EnableWindow(gethwnd(0), 0);
+
+emul_o = window (emul_name, "Qt5QWindowIcon", -1); // 654 366
+
+emul_o.width = 654; emul_o.height = 400;
+
+movewindow(emul_o);
+
+activate(emul_o); // фикс проблемного пикселя при сворачивании окна нокс
+
+keydown(17); pause(20); keydown(48); pause(20); // ctrl + 0
+
+keyup(48);   pause(20); keyup(17);   pause(20);
+
+key(27);     pause(20); // esc
+
+setwindowparam(emul_o);
+
+pause_(300, 301);
+
+while(formatwi(main_w[0]) < 0){ // параметры обновятся при полном обновлении
+
+      main_w[0] = window ("ScreenBoardClassWindow", "Qt5QWindowIcon", window (emul_name, "Qt5QWindowIcon", -1));
+
+      pause(100);
+}
+
+emul_o = window (emul_name, "Qt5QWindowIcon", -1); // 650 366
+
+if(emul_o != 0){
+
+   update_hwnd_group("null"); // какие есть указатели - обновить
+
+if(formatwi(main_w[2]) < 0){             // окна скриптов нету
+
+ if(formatwi(main_w[1]) > 0){            // есть боковая панель
+
+    sendmouse(LEFT, 18, 209, main_w[1]); // открыть скрипты
+
+    pause_(200, 250);
+
+    update_hwnd_group("wait_point");     // обновить все указатели
+}
+else{
+
+messagebox_("Error updating script control parameters in nox. Try again");
+
+return;
+ }
+}
+
+move_group_nw(0, 0);
+}
+else{
+
+messagebox_("Error getting the pointer to the main window");
+
+return;
+}
+
+EnableWindow(gethwnd(0), 1);
+
+get_point = 1;
+
+return;
+}
+
+if(message.lparam == main_d[5]){ // проверка видит ли бот окно
+
+ if(get_point == 0){
+
+    messagebox_("Window pointer not received. Push button ^"Resize window^"");
+
+    return;
+}
+
+EnableWindow(gethwnd(0), 0);
+
+if(GetFileAttributes(path_dev_rel+"\Log") < 1){//Проверка папки логов и скринов
+
+   CreateDirectory(path_dev_rel+"\Log", 0);
+
+   CreateDirectory(path_dev_rel+"Log\Log_screen", 0);
+}
+else{
+
+ if(GetFileAttributes(path_dev_rel+"Log\Log_screen") < 1){
+
+    CreateDirectory(path_dev_rel+"Log\Log_screen", 0);
+ }
+}
+
+savescreen(PNG, path_dev_rel+"Log\Log_screen\vision.png", 0, 0, 650, 366, main_w[0]);
+
+EnableWindow(gethwnd(0), 1);
+
+return;
+ }
+}
+
+function getmessage(0, WM_HOTKEY){
+
+if(f_start_bot == 1){
+
+   reset_bot();
+ }
+}
+
+function getmessage(0, WM_MOVE){
+
+pause(100);
+}
+
+function goto_global_wait(){ // неадекватно работает обычный в include
+
+goto global wait;
+}
+
+RESOURCE{
+
+"C:\_work\projects_\FrostBorn\Version\README.docx";
+
+"C:\_work\projects_\FrostBorn\Version\Updater\1.00";
+
+"C:\_work\projects_\FrostBorn\Version\Updater\Updater.exe";
+
+"C:\_work\projects_\FrostBorn\Version\dll\3.dll";
+
+"C:\_work\projects_\FrostBorn\Version\Img\q\q0.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q1.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q2.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q3.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q4.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q5.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q6.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q7.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q8.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q9.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q10.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q11.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q12.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q13.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q14.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q15.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q16.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q17.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q18.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q19.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q20.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q21.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q22.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\q\q23.bmp";
+
+"C:\_work\projects_\FrostBorn\Version\Img\w\w0.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\w\w1.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\w\w2.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\w\w3.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\w\w4.bmp";
+
+"C:\_work\projects_\FrostBorn\Version\Img\e\e0.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\e\e1.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\e\e2.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\e\e3.bmp";
+
+"C:\_work\projects_\FrostBorn\Version\Img\r\r0.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\r\r1.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\r\r2.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\r\r3.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\r\r4.bmp";
+
+"C:\_work\projects_\FrostBorn\Version\Img\t\t0.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\t\t1.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\t\t2.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\t\t3.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\t\t4.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\t\t5.bmp";
+
+"C:\_work\projects_\FrostBorn\Version\Img\y\y0.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\y\y1.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\y\y2.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\y\y3.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\y\y4.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\y\y5.bmp";
+
+"C:\_work\projects_\FrostBorn\Version\Img\u\u0.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\u\u1.bmp";
+"C:\_work\projects_\FrostBorn\Version\Img\u\u2.bmp";
+}
