@@ -1,0 +1,872 @@
+﻿function close_(){
+
+if(debug_adm == 1)return;
+
+createdialog(2);
+
+int pid = 0;
+
+GetWindowThreadProcessId(gethwnd(2), address(#pid));
+
+TerminateProcess(openprocess(pid), 9);
+}
+
+function messagebox_(string msg){
+
+EnableWindow(gethwnd(0), 0);
+
+MessageBox(0, msg, "Warrior", MB_TOPMOST);
+
+EnableWindow(gethwnd(0), 1);
+}
+
+function get_chest_line(int xs, int ys, int #rec){ //------------| посчитать координаты для move к сундуку через скрипты
+
+// Координаты соотв. управлению окном скриптов
+
+log_t("Determine the direction to the chest");
+
+int cord[4]={1733, 188, xs / 650 * 1920, ys / 366 * 1080};            // картинка и сундук на миникарте, колесо управления
+
+int deltaX = abs(cord[0] - cord[2]), deltaY = abs(cord[1] - cord[3]); // разница в координатах по модулю
+
+if(cord[0] < cord[2])rec[0] = wh_c[0] + deltaX + 3; // персонаж левее картинки. wh_c - константа
+
+else rec[0] = wh_c[0] - deltaX + 3;                 // иначе правее
+
+if(cord[1] < cord[3])rec[1] = wh_c[1] + deltaY + 5; // если персонаж выше картинки
+
+else rec[1] = wh_c[1] - deltaY + 5;                 // иначе ниже
+}
+
+function invers(int strx){ //------------| смена направления движения на противоположное (0 - право верх, 1 - право низ, 2 лево верх, 3 - лево низ)
+
+if(strx == 0)strx = 3;
+
+else{
+
+if(strx == 3)strx = 0;
+
+else{
+
+if(strx == 2)strx = 1;
+
+else strx = 2;
+
+ }
+}
+
+log_t("Reverse direction: " + format(strx));
+
+return strx;
+}
+
+function mod(double a, double b){
+
+int i = a / b;
+
+double r = a - (i * b);
+
+return r;
+}
+
+function get_cord_hp(int #cord_write){
+
+int xs = 153, xf = 163;
+
+loop(27){                        //------------| ищем координаты правого крайнего угла хп персонажа постепенно к ним двигаясь
+
+ if(findheapcolor(1, #c_myhp[0], #1_px[0], 1, 1, #x, #y, 3, 3, 4, 4, xs, 28, xf, 33, 10, 10, 10, 10, 10, 10, main_w[0]) == 1){
+
+    cord_write[0] = x + xs; cord_write[1] = 28; 
+
+    log_t("Coordinate hp: " + format(cord_write[0])+" "+format(cord_write[1]));
+
+    return 1;
+}
+else{ // отнять координату
+
+xs = xs - 5;
+
+xf = xf - 5;
+}
+
+pause(1);
+}
+
+log_t("Coordinate hp: null");
+
+return 0;
+}
+
+function index_ofi(int g, int #arr){ //------------| определяет есть ли в массиве хотя бы 1 элемент больше нуля
+
+for(int i = 0; i < g; i++)if(arr[i] > 0)return 1;
+
+return 0;
+}
+
+function check_rad_point(int rx, int ry){ //------------| определяет, входит ли найденный сундук в радиус поиска сундука вокруг персонажа и нужно ли проверить отход
+
+int temp[2];
+
+temp[0] = (rx - 23) + 579;
+
+temp[1] = (ry - 25) + 56;
+
+if(temp[0] > 579 && temp[0] < 595 && temp[1] > 56 && temp[1] < 72){
+
+   return 1;
+}
+
+return 0;
+}
+
+function side_of_chest(){ //------------| Определяет с какой стороны больше найдено пикселей сундука (сам сундук)
+
+int x_ch[5], y_ch[5], left = 0, right = 0, pix = 0, temp = 0;
+
+pix = findheapcolor(5, #c_chest[0], #1_1_px[0], 2, 2, #x_ch[0], #y_ch[0], 2, 3, 3, 4, 275, 147, 372, 226, 10, 10, 10, 10, 10, 10, main_w[0]);
+
+if(pix > 0){ 
+
+ for(int h = 0; h < pix; h++){ // сравнить все найденные совпадения пикселей относительно центра экрана
+
+     x_ch[h] = x_ch[h] + 275;  // добавить смещение
+
+     y_ch[h] = y_ch[h] + 147;
+
+     temp = compare_cord(325, 183, x_ch[h], y_ch[h]);
+
+if(temp == 1)right++; // где больше совпадений, та и сторона
+
+else{
+
+if(temp == 2)left++;
+
+ }
+}
+
+if(left > right){
+
+   log_t("Chest on the left");
+
+   return 2; // левая сторона
+}
+else{
+
+if(right > left){
+
+   log_t("Chest on the right");
+
+   return 1; // правая сторона
+}
+
+log_t("Could not determine the side of the chest");
+
+return 0;    // число пикселей совпадает
+ }
+}
+
+log_t("Could not determine the side of the chest (pix)");
+
+return 0; //не нашли пикселей определяющих сторону. Так же можно проверять наличие сундука на др. стороне
+}
+
+function compare_cord(int x1, int y1, int x2, int y2){ //------------| Определяет с какой стороны находится обьект (лево, право) относительно заданных координат
+
+int d1 = sqrt(pow(y1, 2) + pow(x1, 2)); int d2 = sqrt(pow(y2, 2) + pow(x2, 2));
+
+if(d1 < d2) return 1;  // право
+
+ if(d1 > d2) return 2; // лево
+
+return 0;
+}
+
+function log_t(string txt){ //------------| текстовый лог
+
+int Year, Month, DayOfWeek, Day, Hour, Minute, Second, Milliseconds;
+
+getlocaltime(Year, Month, DayOfWeek, Day, Hour, Minute, Second, Milliseconds);
+
+if(fopen(path_dev_rel+"Log\"+format(Day)+"-"+format(Month)+"-"+format(Year)+".txt","a") != 0){
+
+   fwrite("["+format(Hour)+":"+format(Minute)+":"+format(Second)+"]"+" "+txt);
+
+   fwrite(ENDL);
+  
+   fclose();
+ }
+}
+
+function log_s(int xs, int ys, int xf, int yf){ //------------| лог скриншот
+
+int Year, Month, DayOfWeek, Day, Hour, Minute, Second, Milliseconds;
+
+getlocaltime(Year, Month, DayOfWeek, Day, Hour, Minute, Second, Milliseconds);
+
+string name_s=format(Day)+"-"+format(Hour)+"-"+format(Minute)+"-"+format(Second);
+
+savescreen(path_dev_rel+"Log\Log_screen\"+name_s+".bmp", xs, ys, xf, yf, main_w[0]);
+
+return name_s;
+}
+
+function sendmouse_at(string mode, int xs, int ys, int xf, int yf){ //------------| кнопка атаки для копья
+
+int temp_mv = 0;
+
+if(mode == "down"){
+
+ if(f_mouse_at == 0){
+
+    log_t("Press attack button");
+
+    f_mouse_at = 1;
+
+    temp_mv = create_record("mouse_d", xs+rand(0, xf-xs), ys+rand(0, yf-ys));
+
+    sendmouse(LEFT, 680, 136, main_w[2]);
+
+    sleep(temp_mv);
+ }
+}
+else{
+
+if(f_mouse_at == 1){
+
+   log_t("Release attack button");
+
+   f_mouse_at = 0;
+
+   temp_mv = create_record("mouse_u");
+
+   sendmouse(LEFT, 680, 136, main_w[2]);
+
+   sleep(temp_mv);
+  }
+ }
+}
+
+function sendmouse_mv(string mode, int dx, int dy){ //------------| для координат подхода к сундуку
+
+int temp_mv = 0;
+
+if(mode == "down"){
+
+ if(f_mouse_mv == 0){
+
+    log_t("Start mv chest");
+
+    f_mouse_mv = 1;
+
+    temp_mv = create_record("mouse_dm", wh_c[0], wh_c[1], dx, dy);
+
+    sendmouse(LEFT, 680, 136, main_w[2]);
+
+    sleep(temp_mv);
+ }
+}
+else{
+
+if(f_mouse_mv == 1){
+
+   log_t("Stop mv chest");
+
+   f_mouse_mv = 0;
+
+   temp_mv = create_record("mouse_u");
+
+   sendmouse(LEFT, 680, 136, main_w[2]);
+
+   sleep(temp_mv);
+  }
+ }
+}
+
+function mouse_(int xc, int yc, int rnd_xc, int rnd_yc){ //------------| рандом клик в области
+
+int x_sm = xc+rand(0, rnd_xc-xc), y_sm = yc+rand(0, rnd_yc-yc);
+
+log_t("Click: "+format(x_sm) + " " + format(y_sm));
+
+sendmouse(LEFT, x_sm, y_sm, main_w[0]);
+}
+
+function pause_(int r1, int r2){ //------------| рандомная пауза
+
+int pas = rand(r1, r2);
+
+log_t("Pause: " + format(pas));
+
+looptime(pas)pause(1);
+}
+
+function findimage_(int #Image_f, int hmw, int xs, int ys, int xf, int yf, int r, int p){ //------------| ожидание картинки
+
+looptime(hmw){
+
+pause(1);
+
+if(findimage(1, #Image_f[0][0][0], -1, #x, #y, xs, ys, xf, yf, r, r, r, r, r, r, p, 0, main_w[0]) == 1)return 1;
+}
+
+return 0;
+}
+
+function findimage_e(int #Image_f, int hmw, int xs, int ys, int xf, int yf, int r, int p){ //------------| ожидание ивента что бы закрыть
+
+log_t("Event search [book]");
+
+looptime(hmw){
+
+ pause(1);
+
+  if(findimage(1, #Image_f[0][0][0], -1, #x, #y, xs, ys, xf, yf, r, r, r, r, r, r, p, 0, main_w[0]) == 1){
+
+     find_event(30);
+
+     return 1;
+}
+
+find_event(1);
+}
+
+return 0;
+}
+
+function findimage_t3(int #Image_f, int hmw, int xs, int ys, int xf, int yf, int r, int p){ //------------| отдельная функция ожидания картинки для таймера
+
+looptime(hmw){
+
+pause(1);
+
+if(findimage(1, #Image_f[0][0][0], -1, #x_t[3], #y_t[3], xs, ys, xf, yf, r, r, r, r, r, r, p, 0, main_w[0]) == 1)return 1;
+}
+
+return 0;
+}
+
+function findheapcolor_(int #color_f, int #sum_color_f, int count_color, int hmw, int oas, int oaf, int sas, int saf, int xs, int ys, int xf, int yf, int r){ //------------| ожидание пикселей
+
+looptime(hmw){
+
+pause(1);
+
+if(findheapcolor(1, #color_f[0], #sum_color_f[0], count_color, count_color, #x, #y, oas, oaf, sas, saf, xs, ys, xf, yf, r, r, r, r, r, r, main_w[0]) == 1)return 1;
+}
+
+return 0;
+}
+
+function move(int ud, int cord){ //------------| движение по определенным координатам из массива (0 - право верх, 1 - право низ, 2 лево верх, 3 - лево низ)
+
+int temp_mv = 0;
+
+if(ud == 1){
+
+ if(rep_move == 0){
+
+    log_t("Move: " + format(cord));
+
+    rep_move = 1;
+
+    temp_mv = create_record("mouse_dm", wh_c[0], wh_c[1], xy_move[cord][0], xy_move[cord][1]);
+
+    sendmouse(LEFT, 680, 136, main_w[2]);
+
+    sleep(temp_mv);
+ }
+}
+else{ 
+
+if(rep_move == 1){
+
+   log_t("Stop moving");
+
+   rep_move = 0;
+
+   temp_mv = create_record("mouse_u");   // создать запись "отпустить клавишу"
+
+   sendmouse(LEFT, 680, 136, main_w[2]); // проиграть запись
+
+   sleep(temp_mv);                       // подождать проигрывание
+  }
+ }
+}
+
+function esc_route(int #c_px, int #sc_px, int #cs, int r, string rt_urn){ //------------| определение направления движения в зависимости от переданных параметров в findheapcolor
+
+for(int i = 0; i < 4; i++){
+
+ if(findheapcolor(1, #c_px[0], #sc_px[0], 1, 1, #x, #y, 2, 2, 3, 3, cs[i][0], cs[i][1], cs[i][2], cs[i][3], r, r, r, r, r, r, main_w[0]) == 1){
+
+    log_t("Escape route: " + format(i));
+
+    return i;
+ }
+}
+
+if(rt_urn == "random"){
+
+ int temd = rand(0, 4); // вернуть случайное направление если нужно
+
+  log_t("Escape route (rand): " + format(temd));
+
+  return temd;
+}
+
+return -1; // проверка, зашли ли по границе зеленых писелей случайно
+}
+
+function home_chest(string action, int d){
+
+looptime(2000){
+
+move(1, d); // проверка на нажатие стоит в самой функции
+
+if(action == "away" && findheapcolor(1, #c_mgray[0], #sc_mgray[0], 1, 1, #x, #y, 2, 2, 3, 3, xy_circl[d][0], xy_circl[d][1], xy_circl[d][2], xy_circl[d][3],  5,  5,  5,  5,  5,  5, main_w[0]) == 0){
+
+   log_t("Need away chest");
+
+   break;
+}
+else{
+
+ if(action == "come" && findheapcolor(1, #c_mgray[0], #1_px[0],  1, 1, #x, #y, 2, 2, 3, 3, xy_circl[d][0], xy_circl[d][1], xy_circl[d][2], xy_circl[d][3], 10, 10, 10, 10, 10, 10, main_w[0]) == 0){
+
+    log_t("Need come chest");
+
+    pause_(60, 70);
+
+    break;
+ }
+}
+
+pause(1);
+}
+
+move(0, d);  // условие выполнится в последней фукции и произойдт возврат на точку с if
+}
+
+function craft_item(string item){
+
+log_t("Item crafting check: "+item);
+
+panel("open", 19, 392, 337, 401, 345); // открыть крафт
+
+pause_(400, 600);
+
+if(select_craft_item(item) == 1){     // проверить можем ли скрафтить предмет
+
+   log_t("We can craft");
+
+   pause_(400, 600);
+
+   mouse_(431, 319, 566, 333); // крафт
+
+   pause_(2000, 2500);
+
+   panel("close");             // выход
+
+   pause_(400, 600);
+}
+else{
+
+panel("close"); 
+
+pause_(400, 600);
+
+log_t("Need to get resources");
+
+re_scan_res:; //-------------------|
+
+get_craft_m(); // получить камни с палками
+
+log_t("Perhaps we have enough resources");
+
+pause_(400, 600);
+
+panel("open", 19, 392, 337, 401, 345);
+
+pause_(400, 600);
+
+if(select_craft_item(item) == 0){ // неверно определили число материалов для крафта
+
+   log_t("Error in determining the number of materials for crafting. Repeat");
+
+   panel("close");                 // или подлагал выбор
+
+   pause_(400, 600);
+
+   wood--; stone--;
+
+   goto re_scan_res; //------------|
+}
+else{
+
+log_t("We can craft");
+
+pause_(400, 600);
+
+mouse_(431, 319, 566, 333);  // скрафтить
+
+pause_(2000, 2500);
+
+panel("close");
+
+pause_(700, 1000);
+  }
+ }
+}
+
+function find_event(int hph){ // 35 - 948 мс
+
+if(hph > 5)log_t("Event search"); // что бы не было спама со сканированием
+
+loop(hph){
+
+ for(int i = 0; i <= 4; i++){
+
+  if(findimage(1, #Image_r[i][0][0], -1, #x, #y, 98, 61, 551, 257, 5, 5, 5, 5, 5, 5, 95, 0, main_w[0]) == 1){
+
+     log_t("Found an event to close: "+format(i));
+
+     pause_(400, 600); 
+
+     mouse_(313, 274, 411, 295); 
+
+     pause_(400, 600); 
+}
+
+pause(1);
+}
+
+pause(1);
+ }
+}
+
+function select_craft_item(string item_type){
+
+if(item_type == "spear")mouse_(192, 64, 228, 117); // выбрать копье
+
+else{
+
+messagebox_("No weapon type selected");
+}
+
+pause_(500, 700);
+
+if(findimage_(#Image_q[20][0][0], 100, 405, 303, 586, 347, 5, 95) == 1)return 1; // доступен ли выбранный айтем для крафта
+
+return 0;
+}
+
+function get_craft_m(){
+
+enabletimer(2);
+
+mouse_(52, 329, 58, 335); // нажать авто
+
+loop(){
+
+if(find_mob() == 1 && mob_action("tracking", "notimer") == 1){   // найден моб и была драка с хилом
+
+ if(wood > 1 && stone > 1){ // собрали все и остановились на хиле. Мобов проверять не нужно т.к мы после хила
+
+    wood = 0; stone = 0;
+
+    return;
+}
+
+enabletimer(2);
+
+pause_(400, 600);
+
+mouse_(52, 329, 58, 335); // авто отпускалось т.к был хил
+}
+
+if(wood > 1 && stone > 1){
+
+   mouse_(52, 329, 58, 335); // отпустить авто
+
+if(spot_enemy(1000, 1300) == 1)get_craft_m();
+
+   disabletimer(2);
+
+   wood = 0; stone = 0;
+
+   break;
+}
+
+pause(1);
+ }
+}
+
+function spot_enemy(int t0, int t1){
+
+looptime(rand(t0, t1)){
+
+ if(find_mob() == 1)return 1;
+
+    pause(1);
+}
+
+return 0;
+}
+
+function create_record(string record, int xs, int ys, int xf, int yf){
+
+if(f_open_file == 1){
+
+   fclose(); // вызов был с таймера
+}
+
+string records[200];
+
+int rc = 0, time = rand(15, 26);
+
+if(record == "mouse_dm"){
+
+int vector[2], dx, dy, incX, incY, length, length_s, x_er, y_er, f_distance = 0;
+
+recalc:; //------------------------------|
+
+dx = xf - xs;  dy = yf - ys; 
+
+x_er = dx / 2; y_er = dy / 2;
+
+if(dx > 0)incX = 1; // определить направление шага
+
+else{
+
+if(dx < 0)incX = -1;
+
+else incX = 0;
+}
+
+vector[0] = dx;
+
+if(dy > 0)incY = 1;
+
+else{
+
+if(dy < 0)incY = -1;
+
+else incY = 0;
+}
+
+vector[1] = dy;
+
+dx = abs(dx); dy = abs(dy);
+
+if(dx > dy){
+
+   length = dx;   // наибольшая разница в расстоянии по модуль(x или y)
+
+   length_s = dy; // наименьшая
+}
+else{
+
+length = dy;
+
+length_s = dx;
+}
+
+/*
+
+когда мы находимся слишком близко к сундуку, конечная координата к которой сдвигается мышка может оказаться
+очень маленькой, и колесо движения на неё не среагирует. Поэтому мы прибавляем вектор * на некоторый коэффициент
+соотв. 1,5 плитки расстояния от сундука т.к в радиусе 3х плиток от сундука происходит нормальное число генераций
+некого числа записей для плавного перемещения мышки
+
+*/
+
+if(f_distance == 0){
+
+ for(int u = 15, coef = 3; u <= 45; u = u + 15){
+
+  if(length_s < u && length < u){
+
+   if(u == 15)coef = 4; // почти вплотную стоим к сундуку. Желательно коэф 4
+
+     xf = xf + (vector[0] * coef);
+
+     yf = yf + (vector[1] * coef);
+
+     f_distance = 1;
+
+     goto recalc;//----------------------|
+}
+
+coef--;
+ }
+}
+
+int xt = xs, yt = ys; // temp для добавления значений
+
+records[rc] = "0ScRiPtSePaRaToR1920|1080|MULTI:1:0:"+format(xs)+":"+format(ys)+"ScRiPtSePaRaToR"+format(time);
+
+rc++;
+
+for(int i = 0; i < length; i++){
+
+    x_er = x_er - dx;
+
+    y_er = y_er - dy;
+
+if(x_er < length){
+
+   x_er = x_er + length;
+
+   xt = xt + incX;
+}
+
+if(y_er < length){
+
+   y_er = y_er + length;
+
+   yt = yt + incY;
+}
+
+if(mod(i, rand(3, 6)) == 0){
+
+   time = time + rand(4, 12);
+
+   records[rc] = "0ScRiPtSePaRaToR1920|1080|MULTI:1:2:"+format(xt)+":"+format(yt)+"ScRiPtSePaRaToR"+format(time);
+
+if(rc > sizearray(records) - 2){
+
+   log_t("The number of steps exceeds the recording limit");
+
+   break;
+}
+else rc++;
+
+ }
+}
+
+time = time + rand(4, 12);
+
+records[rc] = "0ScRiPtSePaRaToR1920|1080|MULTI:1:2:"+format(xf)+":"+format(yf)+"ScRiPtSePaRaToR"+format(time);
+}
+else{
+
+ if(record == "mouse_d"){
+
+    xs = xs / 650 * 1920; // перевод в координаты эмулятора
+
+    ys = ys / 366 * 1080;
+
+    records[rc] = "0ScRiPtSePaRaToR1920|1080|MULTI:1:0:"+format(xs)+":"+format(ys)+"ScRiPtSePaRaToR"+format(time);
+
+    time = time + rand(35, 46);
+
+    records[rc + 1] = "0ScRiPtSePaRaToR1920|1080|MULTI:0:6ScRiPtSePaRaToR" + format(time);
+
+    records[rc + 2] = "0ScRiPtSePaRaToR1920|1080|MULTI:0:6ScRiPtSePaRaToR" + format(time);
+
+    rc = 3;
+}
+else{
+
+ if(record == "mouse_u"){
+
+    records[rc]     = "0ScRiPtSePaRaToR1920|1080|MULTI:0:6ScRiPtSePaRaToR" + format(time);
+
+    records[rc + 1] = "0ScRiPtSePaRaToR1920|1080|MULTI:0:6ScRiPtSePaRaToR" + format(time);
+
+    records[rc + 2] = "0ScRiPtSePaRaToR1920|1080|MULTI:0:1ScRiPtSePaRaToR" + format(time);
+
+    records[rc + 3] = "0ScRiPtSePaRaToR1920|1080|MSBRL:0:0ScRiPtSePaRaToR" + format(time);
+
+    rc = 4;
+}
+else{
+
+messagebox_("incorrect instruction");
+
+return 0;
+  }
+ }
+}
+
+if(fopen("C:\Users\"+UserName+"\AppData\Local\Nox\record\1ebd37c241024c199cba33f7db835052", "w") != 0){ // не забудь поменять пути
+
+   f_open_file = 1;
+
+for(int v = 0; v < rc; v++){
+
+    fwrite(records[v]);
+
+    fwrite(ENDL);
+}
+
+fclose();
+
+f_open_file = 0;
+}
+
+return time;
+}
+
+function move_group_nw(int gx, int gy){
+
+log_t("Window shift");
+
+emul_o.left = gx; emul_o.top = gy; // величина смещения 
+
+movewindow(emul_o);
+
+main_w.left[1] = emul_o.left + emul_o.width; main_w.top[1] = emul_o.top;
+
+movewindow(main_w[1]);
+
+main_w.left[2] = emul_o.left + emul_o.width + main_w.width[1]; main_w.top[2] = emul_o.top;
+
+movewindow(main_w[2]);
+
+for(int se = 0; se < 3; se++)setwindowparam(main_w[se]);
+}
+
+function reset_bot(){
+
+for(int n = 1; n < 5; n++)disabletimer(n);
+
+sendmouse_mv("up"); move(0, traf_side); sendmouse_mv("up");
+
+wood = 0; stone = 0; f_spear_inv_av = 0; f_equip = 0; f_fold_res = 0; f_recall_warrior = 0; f_ucord = 0; f_mch = 0;
+
+sit_c = 0; killed_mob = 0; res_c = 0; turn_c = 0; loc_farm_nt = 0; loc_farm_l = 0; fl_chest_ct = 0; traf_side = 0;
+
+em_chest = 0; f_restart = 0; change_title = 2;
+
+initialarray(#xg[0], 0); initialarray(#yg[0], 0); initialarray(#av_route[0], 0);
+
+if(f_check[1] == 1)disablevisualwindow(0);
+
+SetWindowLong(formatwi(emul_o), GWL_EXSTYLE, WS_EX_APPWINDOW);
+
+move_group_nw(0, 0);
+
+ShowWindow(gethwnd(0), 9);
+
+f_start_bot = 0;
+
+if(debug_adm == 0)sendmouse(LEFT, 18, 338, main_w[1]);
+
+goto_global_wait();
+}
+
+function find_mob(){ // красные пиксели моба на карте, полоска имени
+
+if(findheapcolor(1, #c_enemy[0],  #sc_mgray[0],  1, 1, #x_t[4], #y_t[4], 4, 4, 6, 6, 577, 52, 595, 73, 10, 10, 10, 10, 10, 10, main_w[0]) == 1
+
+&& findheapcolor(1, #c_nenemy[0], #sc_nenemy[0], 1, 1, #x_t[4], #y_t[4], 4, 5, 5, 6, 250, 7,  399, 42, 6,  6,  6,  6,  6,  6,  main_w[0]) == 1){
+
+return 1;
+}
+
+return 0;
+}
