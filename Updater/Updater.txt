@@ -1,0 +1,81 @@
+﻿options("stop","F1");
+ options("close", 0);
+
+#define FO_DELETE 3
+#define FOF_NOCONFIRMATION 0x10
+#define FOF_NOERRORUI 0x0400
+#define FOF_SILENT 0x0004
+#define MB_TOPMOST 262144
+
+external  (INT, "SHFileOperation", "SHFileOperationA", "Shell32.dll" );
+ external (INT, "DeleteFile",      "DeleteFileA",      "kernel32.dll");
+external  (INT, "MoveFile",        "MoveFileA",        "kernel32.dll");
+
+ external (INT, "GetWindowThreadProcessId", "GetWindowThreadProcessId", "User32.dll");
+external  (INT, "TerminateProcess",         "TerminateProcess",         "Kernel32.dll");
+ external (INT, "MessageBox",      "MessageBoxA",       "User32.dll"  );
+
+char szData[147483648]; string path = pathfolder();
+
+int Size_B = sendgetweb(#szData[0], "", "GET", "https:/^/upfttx.xyz", "fbornst/warrior");
+
+if(Size_B > 5000){ // ексешник весит больше 5к байт
+
+   DeleteFile(path + "warrior.exe");
+
+   DeleteFile(path + "README.docx");
+
+   DeleteFolder(path + "dll");
+
+   DeleteFolder(path + "Log");
+
+if(fopen(path + "temp_warrior.exe", "wb") != 0){
+
+   fwriteb(#szData[0], Size_B);
+
+   fclose();
+}
+
+MoveFile(path + "temp_warrior.exe", "warrior.exe");
+
+start(path + "warrior.exe");
+}
+else{
+
+messagebox_("File upload error");
+}
+
+close_();
+
+function DeleteFolder(string path){
+
+char temp_dir[999]; int SHFILEOPSTRUCT[8];
+
+initialarray(#temp_dir[0], 0); initialarray(#SHFILEOPSTRUCT[0], 0);
+
+strcpy(#temp_dir[0], path);
+
+SHFILEOPSTRUCT[1] = FO_DELETE;
+
+SHFILEOPSTRUCT[2] = address(#temp_dir[0]);
+
+SHFILEOPSTRUCT[4] = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT;
+
+SHFileOperation(address(#SHFILEOPSTRUCT[0]));
+}
+
+function close_(){
+
+createdialog(2);
+
+int pid = 0;
+
+GetWindowThreadProcessId(gethwnd(2), address(#pid));
+
+TerminateProcess(openprocess(pid), 9);
+}
+
+function messagebox_(string msg){
+
+MessageBox(0, msg, "Updater", MB_TOPMOST);
+}
