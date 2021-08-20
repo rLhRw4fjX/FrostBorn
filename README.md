@@ -1,6 +1,6 @@
 RU:
 
-На данный момент программа предназначена для получения ресурсов с сундуков в лесу и складывания их дома
+На данный момент программа предназначена для получения ресурсов с сундуков в лесу и складывания их дома. Для сборки программы потребуется поменять пути к файлам, программа компилируется в "Kibor"
 
 Запуск и настройка:
 
@@ -62,7 +62,8 @@ Frostborn:
 
 ENG:
 
-At the moment, the program is designed to get resources from chests in the forest and fold them at home.
+At the moment, the program is designed to get resources from chests in the forest and fold them at home. To build the program, you need to change the paths to the files, the program is compiled into "Kibor"
+
 Launch and setup:
 
 System:
